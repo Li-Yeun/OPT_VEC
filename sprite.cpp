@@ -1,7 +1,11 @@
 #include "precomp.h"
 
+static uint ScaleColorTable[256];
+static bool computed = false;
+
 uint ReadBilerp( Surface& bitmap, float u, float v )
 {
+
 	// read from a bitmap with bilinear interpolation.
 	// warning: not optimized.
 	int iu1 = (int)u % bitmap.width, iv1 = (int)v % bitmap.height;
@@ -15,6 +19,12 @@ uint ReadBilerp( Surface& bitmap, float u, float v )
 
 Sprite::Sprite( const char* fileName )
 {
+	if (!computed)
+	{
+		for (int i = 0; i < 256; ++i)
+			ScaleColorTable[i] = ScaleColor(0, i);
+		computed = true;
+	}
 	// load original bitmap
 	Surface original( fileName );
 	// copy to internal data
@@ -134,7 +144,6 @@ void Sprite::ScaleAlpha( uint scale )
 		pixels[i] = (pixels[i] & 0xffffff) + (a << 24);
 	}
 }
-
 void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 {
 	// save the area of target that we are about to overwrite
@@ -174,11 +183,11 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		uint* src = spixels + frame * frameSize + v * stride;
 		for (int u = 0; u < frameSize - 1; ++u, ++src, ++dst)
 		{
-			//std::cout << src[0]  << std::endl;
-			p0 = ScaleColor(src[0], w & 0xff);
-			p1 = ScaleColor(src[1], (w >> 8) & 0xff);
-			p2 = ScaleColor(src[stride], (w >> 16) & 0xff);
-			p3 = ScaleColor(src[stride + 1], (w >> 24) & 0xff);
+			//std::cout << ScaleColorTable[0] << std::endl;
+			p0 = (src[0] == 0) ? ScaleColorTable[w & 0xff] : ScaleColor(src[0], w & 0xff);
+			p1 = (src[1] == 0) ? ScaleColorTable[(w >> 8) & 0xff] : ScaleColor(src[1], (w >> 8) & 0xff);
+			p2 = (src[stride] == 0) ? ScaleColorTable[(w >> 16) & 0xff] : ScaleColor(src[stride], (w >> 16) & 0xff);
+			p3 = (src[stride+1] == 0) ? ScaleColorTable[((w >> 24) & 0xff)] : ScaleColor(src[stride + 1], (w >> 24) & 0xff);
 			pix = p0 + p1 + p2 + p3;
 			alpha = pix >> 24;
 			*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 ^ alpha );
