@@ -148,31 +148,39 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
+
+	int frameSize = sprite->frameSize;
+	int width = target->width;
+	uint* tpixels = target->pixels;
+	uint* spixels = sprite->pixels;
+	for (int v = 0; v < frameSize; ++v)
+		memcpy( backup + v * frameSize, tpixels + x1 + (y1 + v) * width, frameSize * 4 );
 	lastPos = make_int2( x1, y1 );
 	lastTarget = target;
 	// calculate bilinear weights - these are constant in this case.
 	uint frac_x = (int)(255.0f * (pos.x - floorf(pos.x)));
 	uint frac_y = (int)(255.0f * (pos.y - floorf(pos.y)));
-
-	uint w0 = (frac_x * frac_y) >> 8;
-	uint w1 = ((255 ^ frac_x) * frac_y) >> 8;
-	uint w2 = (frac_x * (255 ^ frac_y)) >> 8;
-	uint w3 = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
+	union { uint w; char s[4]; };
+	s[0] = (frac_x * frac_y) >> 8;
+	s[1] = ((255 ^ frac_x) * frac_y) >> 8;
+	s[2] = (frac_x * (255 ^ frac_y)) >> 8;
+	s[3] = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
 	// draw the sprite frame
-	uint stride = sprite->frameCount * sprite->frameSize;
-	for (int v = 0; v < sprite->frameSize - 1; ++v)
+	uint stride = sprite->frameCount * frameSize;
+	uint p0, p1, p2, p3, pix, alpha;
+	for (int v = 0; v < frameSize - 1; ++v)
 	{
-		uint* dst = target->pixels + x1 + (y1 + v) * target->width;
-		uint* src = sprite->pixels + frame * sprite->frameSize + v * stride;
-		for (int u = 0; u < sprite->frameSize - 1; ++u, ++src, ++dst)
+		uint* dst = tpixels + x1 + (y1 + v) * width;
+		uint* src = spixels + frame * frameSize + v * stride;
+		for (int u = 0; u < frameSize - 1; ++u, ++src, ++dst)
 		{
-			uint p0 = ScaleColor(src[0], w0);
-			uint p1 = ScaleColor(src[1], w1);
-			uint p2 = ScaleColor(src[stride], w2);
-			uint p3 = ScaleColor(src[stride + 1], w3);
-			uint pix = p0 + p1 + p2 + p3;
-			uint alpha = pix >> 24;
+			//std::cout << src[0]  << std::endl;
+			p0 = ScaleColor(src[0], w & 0xff);
+			p1 = ScaleColor(src[1], (w >> 8) & 0xff);
+			p2 = ScaleColor(src[stride], (w >> 16) & 0xff);
+			p3 = ScaleColor(src[stride + 1], (w >> 24) & 0xff);
+			pix = p0 + p1 + p2 + p3;
+			alpha = pix >> 24;
 			*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 ^ alpha );
 		}
 	}
@@ -191,9 +199,9 @@ void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
+	for (int v = 0; v < sprite->frameSize; ++v) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
 	// draw the sprite frame
-	for (int v = 0; v < sprite->frameSize; v++) for (int u = 0; u < sprite->frameSize; u++)
+	for (int v = 0; v < sprite->frameSize; ++v) for (int u = 0; u < sprite->frameSize; ++u)
 	{
 		uint* dst = target->pixels + x1 + u + (y1 + v) * target->width;
 		uint pix = sprite->pixels[frame * sprite->frameSize + u + v * sprite->frameCount * sprite->frameSize];
@@ -208,7 +216,7 @@ void SpriteInstance::Remove()
 {
 	// use the stored pixels to restore the rectangle affected by the sprite.
 	// note: sprites must be removed in reverse order to guarantee correct removal.
-	if (lastTarget) for (int v = 0; v < sprite->frameSize; v++)
+	if (lastTarget) for (int v = 0; v < sprite->frameSize; ++v)
 	{
 		memcpy( lastTarget->pixels + lastPos.x + (lastPos.y + v) * lastTarget->width,
 			backup + v * sprite->frameSize, sprite->frameSize * 4 );
