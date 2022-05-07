@@ -1,8 +1,4 @@
 #include "precomp.h"
-
-static uint ScaleColorTable[256];
-static bool computed = false;
-
 uint ReadBilerp( Surface& bitmap, float u, float v )
 {
 
@@ -19,12 +15,6 @@ uint ReadBilerp( Surface& bitmap, float u, float v )
 
 Sprite::Sprite( const char* fileName )
 {
-	if (!computed)
-	{
-		for (int i = 0; i < 256; ++i)
-			ScaleColorTable[i] = ScaleColor(0, i);
-		computed = true;
-	}
 	// load original bitmap
 	Surface original( fileName );
 	// copy to internal data
@@ -169,11 +159,10 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 	// calculate bilinear weights - these are constant in this case.
 	uint frac_x = (int)(255.0f * (pos.x - floorf(pos.x)));
 	uint frac_y = (int)(255.0f * (pos.y - floorf(pos.y)));
-	union { uint w; char s[4]; };
-	s[0] = (frac_x * frac_y) >> 8;
-	s[1] = ((255 ^ frac_x) * frac_y) >> 8;
-	s[2] = (frac_x * (255 ^ frac_y)) >> 8;
-	s[3] = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
+	uint s0 = (frac_x * frac_y) >> 8;
+	uint s1 = ((255 ^ frac_x) * frac_y) >> 8;
+	uint s2 = (frac_x * (255 ^ frac_y)) >> 8;
+	uint s3 = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
 	// draw the sprite frame
 	uint stride = sprite->frameCount * frameSize;
 	uint p0, p1, p2, p3, pix, alpha;
@@ -184,10 +173,10 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		for (int u = 0; u < frameSize - 1; ++u, ++src, ++dst)
 		{
 			//std::cout << ScaleColorTable[0] << std::endl;
-			p0 = (src[0] == 0) ? ScaleColorTable[w & 0xff] : ScaleColor(src[0], w & 0xff);
-			p1 = (src[1] == 0) ? ScaleColorTable[(w >> 8) & 0xff] : ScaleColor(src[1], (w >> 8) & 0xff);
-			p2 = (src[stride] == 0) ? ScaleColorTable[(w >> 16) & 0xff] : ScaleColor(src[stride], (w >> 16) & 0xff);
-			p3 = (src[stride+1] == 0) ? ScaleColorTable[((w >> 24) & 0xff)] : ScaleColor(src[stride + 1], (w >> 24) & 0xff);
+			p0 = (src[0] == 0) ? 0 : ScaleColor(src[0], s0);
+			p1 = (src[1] == 0) ? 0 : ScaleColor(src[1], s1);
+			p2 = (src[stride] == 0) ? 0 : ScaleColor(src[stride], s2);
+			p3 = (src[stride+1] == 0) ? 0 : ScaleColor(src[stride + 1], s3);
 			pix = p0 + p1 + p2 + p3;
 			alpha = pix >> 24;
 			*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 ^ alpha );
