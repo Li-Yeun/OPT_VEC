@@ -139,8 +139,8 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 	// save the area of target that we are about to overwrite
 	if (!backup) backup = new uint[sqr( sprite->frameSize + 1 )];
 	int2 intPos = make_int2( pos );
-	int x1 = intPos.x - (sprite->frameSize >> 1), x2 = intPos.x + (sprite->frameSize >> 1);
-	int y1 = intPos.y - (sprite->frameSize >> 1), y2 = intPos.y + (sprite->frameSize >> 1);
+	int x1 = intPos.x - (sprite->frameSize >> 1), x2 = x1 + sprite->frameSize;
+	int y1 = intPos.y - (sprite->frameSize >> 1), y2 = y1 + sprite->frameSize;
 	if (x1 < 0 || y1 < 0 || x2 >= target->width || y2 >= target->height)
 	{
 		// out of range; skip
