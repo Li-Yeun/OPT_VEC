@@ -59,6 +59,7 @@ using namespace std;
 // basic types
 typedef unsigned char uchar;
 typedef unsigned int uint;
+typedef unsigned long long ulong;
 typedef unsigned short ushort;
 #ifdef _MSC_VER
 typedef unsigned char BYTE;		// for freeimage.h

@@ -11,6 +11,8 @@ public:
 	Sprite( const char* fileName, int frames );
 	void ScaleAlpha( uint scale );
 	uint* pixels;
+	//union { ulong* pixels2; uchar* p; };
+	ulong* pixels2;
 	int frameCount, frameSize;
 };
 

@@ -21,12 +21,20 @@ Sprite::Sprite( const char* fileName )
 	frameCount = 1;
 	frameSize = original.width;
 	pixels = new uint[frameSize * frameSize];
+	pixels2 = new ulong[frameSize * frameSize];
 	memcpy( pixels, original.pixels, frameSize * frameSize * 4 );
+	memset(pixels2, 0, frameSize * frameSize * 8);
 	// fix alpha
 	for (int i = 0; i < frameSize * frameSize; i++)
 	{
-		pixels[i] &= 0xffffff;
-		if (pixels[i] == 0xff00ff) pixels[i] = 0; else pixels[i] |= 0xff000000;
+		uint pxl = pixels[i];
+		pixels2[i] |= (ulong)(pxl & 0xff000000) >> 24;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff0000) >> 16;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff00) >> 8;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)pxl & 0xff;
 	}
 }
 
@@ -38,7 +46,20 @@ Sprite::Sprite( const char* fileName, int frames )
 	frameCount = frames;
 	frameSize = original.width / frameCount;
 	pixels = new uint[frameSize * frameSize * frameCount];
+	pixels2 = new ulong[frameSize * frameSize * frameCount];
 	memcpy( pixels, original.pixels, frameSize * frameSize * frameCount * 4 );
+	memset(pixels2, 0, frameSize * frameSize * frameCount * 8);
+	for (int i = 0; i < frameSize * frameSize * frameCount; i++)
+	{
+		uint pxl = pixels[i];
+		pixels2[i] |= (ulong)(pxl & 0xff000000) >> 24;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff0000) >> 16;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff00) >> 8;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)pxl & 0xff;
+	}
 }
 
 Sprite::Sprite( const char* fileName, int2 topLeft, int2 bottomRight, int size, int frames )
@@ -78,7 +99,10 @@ Sprite::Sprite( const char* fileName, int2 topLeft, int2 bottomRight, int size, 
 	}
 	// produce rotated frames
 	pixels = new uint[size * frames * size];
+	// the 16 bit color channel pixels
+	pixels2 = new ulong[size * frames * size];
 	memset( pixels, 0, size * frames * size * 4 );
+	memset(pixels2, 0, size * frames * size * 8);
 	float2 p[4] = { make_float2( -1, -1 ), make_float2( 1, -1 ), make_float2( 1, 1 ), make_float2( -1, 1 ) };
 	float2 uv[4] = {
 		make_float2( (float)topLeft.x, (float)topLeft.y ), make_float2( (float)bottomRight.x, (float)topLeft.y ),
@@ -126,6 +150,17 @@ Sprite::Sprite( const char* fileName, int2 topLeft, int2 bottomRight, int size, 
 	}
 	frameCount = frames;
 	frameSize = size;
+	for (int i = 0; i < frameSize * frameSize * frameCount; i++)
+	{
+		uint pxl = pixels[i];
+		pixels2[i] |= (ulong)(pxl & 0xff000000) >> 24;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff0000) >> 16;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)(pxl & 0xff00) >> 8;
+		pixels2[i] = pixels2[i] << 16;
+		pixels2[i] |= (ulong)pxl & 0xff;
+	}
 }
 
 void Sprite::ScaleAlpha( uint scale )
