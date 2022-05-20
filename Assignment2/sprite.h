@@ -1,4 +1,6 @@
 #pragma once
+#define RUN_SIMD 2
+
 
 namespace Tmpl8
 {
@@ -11,8 +13,10 @@ public:
 	Sprite( const char* fileName, int frames );
 	void ScaleAlpha( uint scale );
 	uint* pixels;
-	//union { ulong* pixels2; uchar* p; };
-	ulong* pixels2;
+#if RUN_SIMD == 2
+	union { ulong* reordered_pixels; __m128i* reordered_pixels_m; };
+	void SetReorderedPixels();
+#endif
 	int frameCount, frameSize;
 };
 
