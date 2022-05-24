@@ -173,29 +173,54 @@ void Sprite::SetReorderedPixels() {
 					quadpixel,
 					// This *should* shuffle things to |0A0A0A0A|0R0R0R0R|
 					// CORRECTION: it might actually be |0A0A0A0A|0B0B0B0B| because PNG files are Big-endian RGBA? Confusing
-					_mm_set_epi32(0xFF0AFF02, 0xFF0EFF06,
-						0xFF0BFF03, 0xFF0FFF07)
+					_mm_set_epi8(
+						// Alpha
+						-1, 15, -1, 11,
+						-1, 7, -1, 3,
+						// Blue
+						-1, 14, -1, 10,
+						-1, 6, -1, 2
+					)
 				);
 				__m128i greenred = _mm_shuffle_epi8(
 					quadpixel,
 					// Conversely, this should shuffle into |0G0G0G0G|0B0B0B0B|
 					// CORRECTION: and thus I think this is actually |0G0G0G0G|0R0R0R0R|
 					// None of this matters as long as the alpha channel is in the correct place
-					_mm_set_epi32(0xFF08FF00, 0xFF0CFF04, 0xFF09FF01, 0xFF0DFF05)
+					_mm_set_epi8(
+						// Green
+						-1, 13, -1, 9,
+						-1, 5, -1, 1,
+						// Red
+						-1, 12, -1, 8,
+						-1, 4, -1, 0
+					)
 				);
-				if (src[0] != 0)
-				{
-					std::cout << "Quadpixel: ";
-					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(quadpixel.m128i_u8[i]) << "|";
-				    std::cout << endl;
-					std::cout << "AlphaBlue: ";
-					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(alphablue.m128i_u8[i]) << "|";
-					std::cout << endl;
-					std::cout << "GreenRed: ";
-					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(greenred.m128i_u8[i]) << "|";
-					std::cout << endl;
-
-				}
+				//// Uncomment this part for debugging
+				//if (src[0] != 0)
+				//{
+				//	std::cout << "Original Pixels: "
+				//		<< bitset<32>(c0.c_u) << "|"
+				//		<< bitset<32>(c1.c_u) << "|"
+				//		<< bitset<32>(c2.c_u) << "|"
+				//		<< bitset<32>(c3.c_u) << "|" << endl;
+				//	std::cout << "Quadpixel: ";
+				//	std::cout << bitset<32>(_mm_extract_epi32(quadpixel, 3)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(quadpixel, 2)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(quadpixel, 1)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(quadpixel, 0)) << "|" << endl;
+				//	std::cout << "AlphaBlue: ";
+				//	std::cout << bitset<32>(_mm_extract_epi32(alphablue, 3)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(alphablue, 2)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(alphablue, 1)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(alphablue, 0)) << "|" << endl;
+				//	std::cout << "GreenRed:  ";
+				//	std::cout << bitset<32>(_mm_extract_epi32(greenred, 3)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(greenred, 2)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(greenred, 1)) << "|";
+				//	std::cout << bitset<32>(_mm_extract_epi32(greenred, 0)) << "|" << endl;
+				//	std::cout << endl;
+				//}
 				reordered_pixels_m[2 * k] = alphablue;
 				reordered_pixels_m[2 * k + 1] = greenred;
 			}
@@ -244,10 +269,9 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 	w2.w_u = (frac_x * (255 - frac_y));
 	w3.w_u = ((255 - frac_x) * (255 - frac_y));
 	uint stride = sprite->frameCount * sprite->frameSize;
-	const __m128i ab_weight = _mm_set_epi16(w0.w_i[1], w1.w_i[1], w2.w_i[1], w3.w_i[1], w0.w_i[1], w1.w_i[1], w2.w_i[1], w3.w_i[1]);
-	const __m128i gr_weight = _mm_set_epi16(w0.w_i[1], w1.w_i[1], w2.w_i[1], w3.w_i[1], w0.w_i[1], w1.w_i[1], w2.w_i[1], w3.w_i[1]);
+	const __m128i weights = _mm_set_epi16(w0.w_i[0], w1.w_i[0], w2.w_i[0], w3.w_i[0], w0.w_i[0], w1.w_i[0], w2.w_i[0], w3.w_i[0]);
 	__m128i* src = sprite->reordered_pixels_m
-		+ frame * (sprite->frameSize - 1) * (sprite->frameSize - 1);
+		+ frame * (sprite->frameSize - 1) * (sprite->frameSize - 1) * 2;
 	for (int v = 0; v < sprite->frameSize - 1; v++) {
 		uint* dst = target->pixels + x1 + (y1 + v) * target->width;
 		for (int u = 0; u < sprite->frameSize - 1; u++, src += 2, dst++) 
@@ -257,11 +281,11 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 			// the _mm_sad_epu8 gets difference vertically and adds horizontally, add with zero vector for a purely horizontal add!
 			__m128i ab_sum = _mm_sad_epu8(
 				//this mulhi should result in a 0x0A0A0A0A 0x0B0B0B0B 128 bit vector with 8-bit values between 8-bit zeroes.
-				_mm_mulhi_epu16(ab_pixel, ab_weight),
+				_mm_mulhi_epu16(ab_pixel, weights),
 				_mm_setzero_si128()
 			);
 			__m128i gr_sum = _mm_sad_epu8(
-				_mm_mulhi_epu16(gr_pixel, gr_weight),
+				_mm_mulhi_epu16(gr_pixel, weights),
 				_mm_setzero_si128()
 			);
 			// Get the alpha (should be between 0 and 255)
@@ -278,7 +302,7 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 				(static_cast<uint32_t>((std::uint8_t)_mm_cvtsi128_si64(ab_sum))    << 24) |
 				(static_cast<uint32_t>((std::uint8_t)_mm_extract_epi64(ab_sum, 1)) << 16) |
 				(static_cast<uint32_t>((std::uint8_t)_mm_cvtsi128_si64(gr_sum))    << 8) |
-				(static_cast<uint32_t>((std::uint8_t)_mm_extract_epi64(gr_sum, 1)));
+				(static_cast<uint32_t>((std::uint8_t)_mm_extract_epi64(gr_sum, 1)) << 0);
 			*dst =  pix + ScaleColor(*dst, 255 - alpha);
 				
 		}
