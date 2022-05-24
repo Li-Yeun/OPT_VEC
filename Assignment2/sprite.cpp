@@ -149,7 +149,7 @@ void Sprite::SetReorderedPixels() {
 	// Reorder pixels to, for destination pixel, have an 0x0A0A0A0A | 0x0R0R0R0R | 0x0G0G0G0G | 0x0B0B0B0B
 	// or |0x0A0A0A0A | 0x0B0B0B0B | 0x0G0G0G0G | 0x0R0R0R0R|, not sure, in memory to read
 	reordered_pixels_m = new __m128i[(frameSize - 1) * (frameSize - 1) * 2 * frameCount];
-	memset(reordered_pixels_m, 0, 32 * (frameSize - 1) * (frameSize - 1));
+
 	int k = 0;
 	int stride = frameCount * frameSize;
 	for (int f = 0; f < frameCount; ++f) {
@@ -196,6 +196,7 @@ void Sprite::SetReorderedPixels() {
 						-1, 4, -1, 0
 					)
 				);
+
 				//// Uncomment this part for debugging
 				//if (src[0] != 0)
 				//{
@@ -258,18 +259,16 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 #if RUN_SIMD == 2
 	uint frac_x = (int)(255.0f * (pos.x - floorf(pos.x)));
 	uint frac_y = (int)(255.0f * (pos.y - floorf(pos.y)));
-	union Weight { uint w_u; int16_t w_i[2]; };
-	Weight w0;
-	Weight w1;
-	Weight w2;
-	Weight w3;
+
 	// Force 16 bit weights
-	w0.w_u = (frac_x * frac_y);
-	w1.w_u = ((255 - frac_x) * frac_y);
-	w2.w_u = (frac_x * (255 - frac_y));
-	w3.w_u = ((255 - frac_x) * (255 - frac_y));
+	uint w1 = (frac_x * frac_y);
+	uint w2 = ((255 - frac_x) * frac_y);
+	uint w3 = (frac_x * (255 - frac_y));
+	uint w4 = ((255 - frac_x) * (255 - frac_y));
+
 	uint stride = sprite->frameCount * sprite->frameSize;
-	const __m128i weights = _mm_set_epi16(w0.w_i[0], w1.w_i[0], w2.w_i[0], w3.w_i[0], w0.w_i[0], w1.w_i[0], w2.w_i[0], w3.w_i[0]);
+	const __m128i weights = _mm_set_epi16(w1, w2, w3, w4, w1, w2, w3, w4);
+	const __m128i normalized = _mm_set1_epi16(0xff);
 	__m128i* src = sprite->reordered_pixels_m
 		+ frame * (sprite->frameSize - 1) * (sprite->frameSize - 1) * 2;
 	for (int v = 0; v < sprite->frameSize - 1; v++) {
@@ -278,6 +277,7 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		{
 			const __m128i ab_pixel = src[0];
 			const __m128i gr_pixel = src[1];
+			
 			// the _mm_sad_epu8 gets difference vertically and adds horizontally, add with zero vector for a purely horizontal add!
 			__m128i ab_sum = _mm_sad_epu8(
 				//this mulhi should result in a 0x0A0A0A0A 0x0B0B0B0B 128 bit vector with 8-bit values between 8-bit zeroes.
@@ -288,8 +288,13 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 				_mm_mulhi_epu16(gr_pixel, weights),
 				_mm_setzero_si128()
 			);
+			
+
 			// Get the alpha (should be between 0 and 255)
-			int64_t alpha = _mm_extract_epi64(ab_sum, 1);
+			int64_t alpha = ab_sum.m128i_u64[1];
+			uint pix = gr_sum.m128i_u64[0] | (gr_sum.m128i_u64[1] << 8) | (ab_sum.m128i_u64[0] << 16) | (ab_sum.m128i_u64[1] << 24);
+			
+			/*
 			ab_sum = _mm_srli_epi64(
 				_mm_mul_epu32(ab_sum, _mm_set_epi64x(0, alpha)),
 				8);
@@ -298,12 +303,9 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 					gr_sum,
 					_mm_set_epi64x(alpha, alpha)),
 				8);
-			uint pix = 
-				(static_cast<uint32_t>((std::uint8_t)_mm_cvtsi128_si64(ab_sum))    << 24) |
-				(static_cast<uint32_t>((std::uint8_t)_mm_extract_epi64(ab_sum, 1)) << 16) |
-				(static_cast<uint32_t>((std::uint8_t)_mm_cvtsi128_si64(gr_sum))    << 8) |
-				(static_cast<uint32_t>((std::uint8_t)_mm_extract_epi64(gr_sum, 1)) << 0);
-			*dst =  pix + ScaleColor(*dst, 255 - alpha);
+			*/
+
+			*dst = ScaleColor(pix, alpha) + ScaleColor(*dst, 255 - alpha);
 				
 		}
 	}

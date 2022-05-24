@@ -143,7 +143,7 @@ bool Bullet::Tick()
 	// destroy bullet if it leaves the map
 	if (pos.x < 0 || pos.y < 0 || pos.x > MyApp::map.width || pos.y > MyApp::map.height) return false;
 	// check if the bullet hit a tank
-	ActorList& tanks = MyApp::grid.FindNearbyTanks( pos, 0 );
+	ActorList& tanks = MyApp::grid.FindNearbyTanks(pos);
 	for (int s = (int)tanks.count, i = 0; i < s; i++)
 	{
 		Tank* tank = tanks.tank[i]; // a tank, thankfully
