@@ -261,14 +261,14 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 	uint frac_y = (int)(255.0f * (pos.y - floorf(pos.y)));
 
 	// Force 16 bit weights
-	uint w1 = (frac_x * frac_y);
-	uint w2 = ((255 - frac_x) * frac_y);
-	uint w3 = (frac_x * (255 - frac_y));
-	uint w4 = ((255 - frac_x) * (255 - frac_y));
+	uint w0 = (frac_x * frac_y);
+	uint w1 = ((255 - frac_x) * frac_y);
+	uint w2 = (frac_x * (255 - frac_y));
+	uint w3 = ((255 - frac_x) * (255 - frac_y));
 
 	uint stride = sprite->frameCount * sprite->frameSize;
-	const __m128i weights = _mm_set_epi16(w1, w2, w3, w4, w1, w2, w3, w4);
-	const __m128i normalized = _mm_set1_epi16(0xff);
+	const __m128i weights = _mm_set_epi16(w0, w1, w2, w3, w0, w1, w2, w3);
+
 	__m128i* src = sprite->reordered_pixels_m
 		+ frame * (sprite->frameSize - 1) * (sprite->frameSize - 1) * 2;
 	for (int v = 0; v < sprite->frameSize - 1; v++) {
