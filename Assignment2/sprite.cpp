@@ -158,7 +158,8 @@ void Sprite::SetReorderedPixels() {
 			uint* src = pixels + f * frameSize + i * stride;
 			for (int j = 0; j < frameSize - 1; ++j, ++k, ++src)
 			{
-				union Upixel { uint c_u; int c_i; } c0;
+				union Upixel { uint c_u; int c_i; };
+				Upixel c0;
 				Upixel c1;
 				Upixel c2;
 				Upixel c3;
@@ -182,6 +183,19 @@ void Sprite::SetReorderedPixels() {
 					// None of this matters as long as the alpha channel is in the correct place
 					_mm_set_epi32(0xFF08FF00, 0xFF0CFF04, 0xFF09FF01, 0xFF0DFF05)
 				);
+				if (src[0] != 0)
+				{
+					std::cout << "Quadpixel: ";
+					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(quadpixel.m128i_u8[i]) << "|";
+				    std::cout << endl;
+					std::cout << "AlphaBlue: ";
+					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(alphablue.m128i_u8[i]) << "|";
+					std::cout << endl;
+					std::cout << "GreenRed: ";
+					for (int i = 0; i < 16; ++i) std::cout << bitset<8>(greenred.m128i_u8[i]) << "|";
+					std::cout << endl;
+
+				}
 				reordered_pixels_m[2 * k] = alphablue;
 				reordered_pixels_m[2 * k + 1] = greenred;
 			}
