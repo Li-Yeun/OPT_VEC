@@ -109,12 +109,28 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
+#if 1
+	Timer t;
+	static SpriteInstance tank(tank1);
+	static int startFrame = 0;
+	int frame = startFrame++;
+	for (int y = 0; y < 80; y++) for (int x = 0; x < 130; x++)
+	{
+		// draw 80x130 tanks on the map with different orientations and positions.
+		tank.Draw(Map::bitmap, float2(x * 30, y * 30), frame++ & 255);
+	}
+
+	static float frameTimeAvg = 50;
+	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
+	printf("frame time: %5.2fms\n%", frameTimeAvg);
+	map.Draw(screen);
+#else
 	Timer t;
 	// draw the map
-	map.Draw( screen );
+	map.Draw(screen);
 	// rebuild actor grid
 	grid.Clear();
-	grid.Populate( actorPool );
+	grid.Populate(actorPool);
 	// update and render actors
 	pointer->Remove();
 	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
@@ -133,12 +149,13 @@ void MyApp::Tick( float deltaTime )
 	coolDown++;
 	for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
-	int2 cursorPos = map.ScreenToMap( mousePos );
-	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
+	int2 cursorPos = map.ScreenToMap(mousePos);
+	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 	// handle mouse
 	HandleInput();
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	printf( "frame time: %5.2fms\n", frameTimeAvg );
+	printf("frame time: %5.2fms\n", frameTimeAvg);
+#endif
 }
