@@ -32,6 +32,7 @@ public:
 	static inline vector<Particle*> sand;		// sand particles
 	static inline Grid grid;					// actor grid for faster range queries
 	static inline int coolDown = 0;				// used to prevent simultaneous firing
+	static inline Kernel* kernel;
 };
 
 } // namespace Tmpl8

@@ -5,11 +5,16 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
+Buffer* deviceBuffer;
+Buffer* spriteBuffer;
+
 void MyApp::Init()
-{
+{	
 	// load tank sprites
 	tank1 = new Sprite( "assets/tanks.png", make_int2( 128, 100 ), make_int2( 310, 360 ), 36, 256 );
 	tank2 = new Sprite( "assets/tanks.png", make_int2( 327, 99 ), make_int2( 515, 349 ), 36, 256 );
+
+	/*
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
 	bush[1] = new Sprite( "assets/bush2.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 14, 256 );
@@ -17,6 +22,7 @@ void MyApp::Init()
 	bush[0]->ScaleAlpha( 96 );
 	bush[1]->ScaleAlpha( 64 );
 	bush[2]->ScaleAlpha( 128 );
+	*/
 	// pointer
 	pointer = new SpriteInstance( new Sprite( "assets/pointer.png" ) );
 	// create armies
@@ -41,6 +47,7 @@ void MyApp::Init()
 		actorPool.push_back( army1Tank );
 		actorPool.push_back( army2Tank );
 	}
+	/*
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -56,14 +63,25 @@ void MyApp::Init()
 		int d = (RandomUInt() & 15) - 8;
 		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d ) );
 	}
+	
 	// place flags
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
+	*/
 	// initialize map view
 	map.UpdateView( screen, zoom );
+
+	kernel = new Kernel("render.cl", "render");
+	deviceBuffer = new Buffer(map.width * map.height, 0, Map::bitmap->pixels);
+	spriteBuffer = new Buffer(tank1->frameSize * tank1->frameSize * tank1->frameCount, 0, tank1->pixels);
+	kernel->SetArgument(0,deviceBuffer);
+	kernel->SetArgument(1, spriteBuffer);
+	
+	deviceBuffer->CopyToDevice(true);
+	spriteBuffer->CopyToDevice(true);
 }
 
 // -----------------------------------------------------------
@@ -109,6 +127,9 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
+	//kernel->Run2D(int2{ 200,400 }, int2{1,1});
+	//clFinish(kernel->GetQueue());
+	//deviceBuffer->CopyFromDevice(true);
 	Timer t;
 	// draw the map
 	map.Draw( screen );
@@ -117,9 +138,9 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	pointer->Remove();
-	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
+	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
-	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
 		// actor got deleted, replace by last in list
@@ -131,12 +152,32 @@ void MyApp::Tick( float deltaTime )
 		i--;
 	}
 	coolDown++;
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
-	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		actorPool[i]->Draw();
+	}
+	deviceBuffer->CopyToDevice(true);
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		kernel->SetArgument(2, actorPool[i]->pos);
+		kernel->SetArgument(3, actorPool[i]->frame);
+		kernel->Run(35 * 35);
+
+	}
+	deviceBuffer->CopyFromDevice(true);
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
+	clFinish(kernel->GetQueue());
 	int2 cursorPos = map.ScreenToMap( mousePos );
+
+	
+	//deviceBuffer->CopyToDevice(true);
+	//memcpy(map.bitmap->pixels, deviceBuffer->GetHostPtr(), map.width * map.height * sizeof(unsigned int));
 	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
 	HandleInput();
+	//deviceBuffer->CopyToDevice(true);
+	//deviceBuffer->CopyToDevice(true);
+	//memcpy(map.bitmap, deviceBuffer, sc);
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;

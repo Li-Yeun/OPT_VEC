@@ -139,6 +139,7 @@ void Sprite::ScaleAlpha( uint scale )
 
 void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 {
+	//std::cout << sprite->frameSize << std::endl;
 	// save the area of target that we are about to overwrite
 	if (!backup) backup = new uint[sqr( sprite->frameSize + 1 )];
 	int2 intPos = make_int2( pos );
@@ -150,9 +151,19 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
-	lastPos = make_int2( x1, y1 );
+
+	for (int v = 0; v < sprite->frameSize; v++) memcpy(backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4);
+	lastPos = make_int2(x1, y1);
 	lastTarget = target;
+
+	/*
+	MyApp::kernel->SetArgument(2, pos);
+	MyApp::kernel->SetArgument(3, frame);
+	MyApp::kernel->Run(35 *35);
+	*/
+
+
+	/*
 	// calculate bilinear weights - these are constant in this case.
 	uint frac_x = (int)(255.0f * (pos.x - floorf( pos.x )));
 	uint frac_y = (int)(255.0f * (pos.y - floorf( pos.y )));
@@ -177,6 +188,7 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 			*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
 		}
 	}
+	*/
 }
 
 void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
