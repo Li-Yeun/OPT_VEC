@@ -5,9 +5,6 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
-Buffer* deviceBuffer;
-Buffer* spriteBuffer;
-
 void MyApp::Init()
 {	
 	// load tank sprites
@@ -74,14 +71,20 @@ void MyApp::Init()
 	// initialize map view
 	map.UpdateView( screen, zoom );
 
-	kernel = new Kernel("render.cl", "render");
+	render_kernel = new Kernel("render.cl", "render");
 	deviceBuffer = new Buffer(map.width * map.height, 0, Map::bitmap->pixels);
 	spriteBuffer = new Buffer(tank1->frameSize * tank1->frameSize * tank1->frameCount, 0, tank1->pixels);
-	kernel->SetArgument(0,deviceBuffer);
-	kernel->SetArgument(1, spriteBuffer);
+	render_kernel->SetArgument(0,deviceBuffer);
+	render_kernel->SetArgument(1, spriteBuffer);
 	
 	deviceBuffer->CopyToDevice(true);
 	spriteBuffer->CopyToDevice(true);
+
+	remove_kernel = new Kernel("render.cl", "remove");
+	remove_kernel->SetArgument(0, deviceBuffer);
+
+	backup_kernel = new Kernel("render.cl", "backup");
+	backup_kernel->SetArgument(0, deviceBuffer);
 }
 
 // -----------------------------------------------------------
@@ -127,9 +130,6 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
-	//kernel->Run2D(int2{ 200,400 }, int2{1,1});
-	//clFinish(kernel->GetQueue());
-	//deviceBuffer->CopyFromDevice(true);
 	Timer t;
 	// draw the map
 	map.Draw( screen );
@@ -151,33 +151,20 @@ void MyApp::Tick( float deltaTime )
 		delete toDelete;
 		i--;
 	}
+
 	coolDown++;
 	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
 	{
 		actorPool[i]->Draw();
 	}
-	deviceBuffer->CopyToDevice(true);
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		kernel->SetArgument(2, actorPool[i]->pos);
-		kernel->SetArgument(3, actorPool[i]->frame);
-		kernel->Run(35 * 35);
-
-	}
-	deviceBuffer->CopyFromDevice(true);
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
-	clFinish(kernel->GetQueue());
-	int2 cursorPos = map.ScreenToMap( mousePos );
 
-	
-	//deviceBuffer->CopyToDevice(true);
-	//memcpy(map.bitmap->pixels, deviceBuffer->GetHostPtr(), map.width * map.height * sizeof(unsigned int));
+	deviceBuffer->CopyFromDevice(true);
+
+	int2 cursorPos = map.ScreenToMap( mousePos );
 	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
 	HandleInput();
-	//deviceBuffer->CopyToDevice(true);
-	//deviceBuffer->CopyToDevice(true);
-	//memcpy(map.bitmap, deviceBuffer, sc);
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;

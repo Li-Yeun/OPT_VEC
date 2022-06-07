@@ -41,3 +41,21 @@ __kernel void render(__global uint* buffer, __global uint* sprite, float2 pos, i
     uint alpha = pix >> 24;
     buffer[dst] = ScaleColor( pix, alpha ) + ScaleColor(buffer[dst] , 255 - alpha );
 }
+
+__kernel void remove(__global uint* buffer, __global uint* backup, int lastPosX, int lastPosY)
+{
+    int x = get_global_id(0);
+    int v = x / (SPRITE_FRAMESIZE);
+    int u = x % (SPRITE_FRAMESIZE);
+
+    buffer[lastPosX + (lastPosY + v) * MAP_WIDTH + u] = backup[v * SPRITE_FRAMESIZE + u];
+}
+
+__kernel void backup(__global uint* buffer, __global uint* backup,  int lastPosX, int lastPosY)
+{
+    int x = get_global_id(0);
+    int v = x / (SPRITE_FRAMESIZE);
+    int u = x % (SPRITE_FRAMESIZE);
+
+    backup[v * SPRITE_FRAMESIZE + u] = buffer[lastPosX + (lastPosY + v) * MAP_WIDTH + u];
+}

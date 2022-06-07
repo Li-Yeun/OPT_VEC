@@ -139,9 +139,11 @@ void Sprite::ScaleAlpha( uint scale )
 
 void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 {
-	//std::cout << sprite->frameSize << std::endl;
 	// save the area of target that we are about to overwrite
-	if (!backup) backup = new uint[sqr( sprite->frameSize + 1 )];
+	if (!backup_buffer)
+	{
+		backup_buffer = new Buffer(sqr(sprite->frameSize + 1), 0 , nullptr);
+	}
 	int2 intPos = make_int2( pos );
 	int x1 = intPos.x - sprite->frameSize / 2, x2 = x1 + sprite->frameSize;
 	int y1 = intPos.y - sprite->frameSize / 2, y2 = y1 + sprite->frameSize;
@@ -152,15 +154,18 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		return;
 	}
 
-	for (int v = 0; v < sprite->frameSize; v++) memcpy(backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4);
 	lastPos = make_int2(x1, y1);
 	lastTarget = target;
 
-	/*
-	MyApp::kernel->SetArgument(2, pos);
-	MyApp::kernel->SetArgument(3, frame);
-	MyApp::kernel->Run(35 *35);
-	*/
+	int sprite_frameSize = sprite->frameSize;
+	MyApp::backup_kernel->SetArgument(1, backup_buffer);
+	MyApp::backup_kernel->SetArgument(2, lastPos.x);
+	MyApp::backup_kernel->SetArgument(3, lastPos.y);
+	MyApp::backup_kernel->Run(sprite_frameSize * sprite_frameSize);
+	
+	MyApp::render_kernel->SetArgument(2, pos);
+	MyApp::render_kernel->SetArgument(3, frame);
+	MyApp::render_kernel->Run((sprite_frameSize-1)* (sprite_frameSize-1));
 
 
 	/*
@@ -194,7 +199,6 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
 {
 	// save the area of target that we are about to overwrite
-	if (!backup) backup = new uint[sprite->frameSize * sprite->frameSize];
 	int2 intPos = make_int2( pos );
 	int x1 = intPos.x - sprite->frameSize / 2, x2 = x1 + sprite->frameSize;
 	int y1 = intPos.y - sprite->frameSize / 2, y2 = y1 + sprite->frameSize;
@@ -204,7 +208,10 @@ void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
+	MyApp::remove_kernel->SetArgument(1, backup_buffer);
+	MyApp::remove_kernel->SetArgument(2, lastPos.x);
+	MyApp::remove_kernel->SetArgument(3, lastPos.y);
+	MyApp::remove_kernel->Run(sprite->frameSize * sprite->frameSize);
 	// draw the sprite frame
 	for (int v = 0; v < sprite->frameSize; v++) for (int u = 0; u < sprite->frameSize; u++)
 	{
@@ -219,11 +226,11 @@ void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
 
 void SpriteInstance::Remove()
 {
-	// use the stored pixels to restore the rectangle affected by the sprite.
-	// note: sprites must be removed in reverse order to guarantee correct removal.
-	if (lastTarget) for (int v = 0; v < sprite->frameSize; v++)
+	if (lastTarget)
 	{
-		memcpy( lastTarget->pixels + lastPos.x + (lastPos.y + v) * lastTarget->width,
-			backup + v * sprite->frameSize, sprite->frameSize * 4 );
+		MyApp::remove_kernel->SetArgument(1, backup_buffer);
+		MyApp::remove_kernel->SetArgument(2, lastPos.x);
+		MyApp::remove_kernel->SetArgument(3, lastPos.y);
+		MyApp::remove_kernel->Run(sprite->frameSize * sprite->frameSize);
 	}
 }

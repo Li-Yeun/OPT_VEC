@@ -23,9 +23,9 @@ public:
 	void DrawAdditive( Surface* target, float2 pos, int frame );
 	void Remove();
 	Sprite* sprite = 0;
-	uint* backup = 0;
 	int2 lastPos;
 	Surface* lastTarget = 0;
+	Buffer* backup_buffer = 0;
 };
 
 } // namespace Tmpl8
