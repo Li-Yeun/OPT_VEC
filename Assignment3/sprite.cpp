@@ -159,10 +159,10 @@ void SpriteInstance::Draw(Surface* target, float2 pos, int frame)
 	// calculate bilinear weights - these are constant in this case.
 	uint frac_x = (int)(255.0f * (pos.x - floorf(pos.x)));
 	uint frac_y = (int)(255.0f * (pos.y - floorf(pos.y)));
-	uint s0 = (frac_x * frac_y) >> 8;
-	uint s1 = ((255 ^ frac_x) * frac_y) >> 8;
-	uint s2 = (frac_x * (255 ^ frac_y)) >> 8;
-	uint s3 = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
+	uint w0 = (frac_x * frac_y) >> 8;
+	uint w1 = ((255 ^ frac_x) * frac_y) >> 8;
+	uint w2 = (frac_x * (255 ^ frac_y)) >> 8;
+	uint w3 = ((255 ^ frac_x) * (255 ^ frac_y)) >> 8;
 	// draw the sprite frame
 	uint stride = sprite->frameCount * frameSize;
 	for (int v = 0; v < frameSize - 1; ++v)
@@ -171,11 +171,10 @@ void SpriteInstance::Draw(Surface* target, float2 pos, int frame)
 		uint* src = spixels + frame * frameSize + v * stride;
 		for (int u = 0; u < frameSize - 1; ++u, ++src, ++dst)
 		{
-			//std::cout << ScaleColorTable[0] << std::endl;
-			uint p0 = ScaleColor(src[0], s0);
-			uint p1 = ScaleColor(src[1], s1);
-			uint p2 = ScaleColor(src[stride], s2);
-			uint p3 = ScaleColor(src[stride + 1], s3);
+			uint p0 = ScaleColor(src[0], w0);
+			uint p1 = ScaleColor(src[1], w1);
+			uint p2 = ScaleColor(src[stride], w2);
+			uint p3 = ScaleColor(src[stride + 1], w3);
 			uint pix = p0 + p1 + p2 + p3;
 			uint alpha = pix >> 24;
 			*dst = ScaleColor(pix, alpha) + ScaleColor(*dst, 255 ^ alpha);

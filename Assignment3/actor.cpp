@@ -25,6 +25,7 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i )
 	MyApp::tankPos[id] = pos;
 	MyApp::tankFrame[id] = frame;
 	MyApp::tankLastTarget[id] = 0;
+	MyApp::tankSprite[id] = a;
 }
 
 // Tank::Tick : tank behaviour

@@ -12,6 +12,13 @@ void MyApp::Init()
 	// load tank sprites
 	tank1 = new Sprite( "assets/tanks.png", make_int2( 128, 100 ), make_int2( 310, 360 ), 36, 256 );
 	tank2 = new Sprite( "assets/tanks.png", make_int2( 327, 99 ), make_int2( 515, 349 ), 36, 256 );
+	int tank1_size = tank1->frameSize * tank1->frameSize * tank1->frameCount;
+	int tank2_size = tank2->frameSize * tank2->frameSize * tank2->frameCount;
+
+	uint* tank_sprites = new uint[tank1_size + tank2_size];
+	std::copy(tank1->pixels, tank1->pixels + tank1_size, tank_sprites);
+	std::copy(tank2->pixels, tank2->pixels + tank2_size, tank_sprites + tank1_size);
+
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
 	bush[1] = new Sprite( "assets/bush2.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 14, 256 );
@@ -28,6 +35,8 @@ void MyApp::Init()
 	tankPos = new float2[totalTanks];
 	tankFrame = new int[totalTanks];
 	tankLastTarget = new int[totalTanks];
+	tankSprite = new bool[totalTanks];
+
 	for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) // main groups
 	{
 		Tank* army1Tank = new Tank( tank1, make_int2( 520 + x * 32, 2420 - y * 32 ), make_int2( 5000, -500 ), 0, 0, id++ );
@@ -67,18 +76,18 @@ void MyApp::Init()
 		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d ) );
 	}
 	// place flags
-	/*
+
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
-	*/
+
 	// initialize map view
 	map.UpdateView( screen, zoom );
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, Map::bitmap->pixels);
-	spriteBuffer = new Buffer(tank1->frameSize * tank1->frameSize * tank1->frameCount, 0, tank1->pixels);
+	spriteBuffer = new Buffer(tank1_size + tank2_size, 0, tank_sprites);
 
 	tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
 	tankLastPosBuffer = new Buffer(totalTanks * 2);
@@ -87,29 +96,39 @@ void MyApp::Init()
 
 	tankFrameBuffer = new Buffer(totalTanks, 0, tankFrame);
 
+	tankSpriteBuffer = new Buffer(totalTanks / 4 , CL_MEM_READ_ONLY, tankSprite);
+
 	render_kernel->SetArgument(0,deviceBuffer);
 	render_kernel->SetArgument(1, spriteBuffer);
 	render_kernel->SetArgument(2, tankPosBuffer);
 	render_kernel->SetArgument(3, tankFrameBuffer);
+	render_kernel->SetArgument(4, tank1->frameSize);
+	render_kernel->SetArgument(5, tank1->frameCount);
+	render_kernel->SetArgument(6, tankSpriteBuffer);
 	
 	deviceBuffer->CopyToDevice(true);
 	spriteBuffer->CopyToDevice(true);
+	tankSpriteBuffer->CopyToDevice(true);
+
 
 	saveLastPos_kernel = new Kernel("render.cl", "saveLastPos");
 	saveLastPos_kernel->SetArgument(0, tankPosBuffer);
 	saveLastPos_kernel->SetArgument(1, tankLastPosBuffer);
 	saveLastPos_kernel->SetArgument(2, tankLastTargetBuffer);
+	saveLastPos_kernel->SetArgument(3, tank1->frameSize);
 
 	backup_kernel = new Kernel("render.cl", "backup");
 	backup_kernel->SetArgument(0, deviceBuffer);
 	backup_kernel->SetArgument(1, tankBackUpBuffer);
 	backup_kernel->SetArgument(2, tankLastPosBuffer);
+	backup_kernel->SetArgument(3, tank1->frameSize);
 
 	remove_kernel = new Kernel("render.cl", "remove");
 	remove_kernel->SetArgument(0, deviceBuffer);
 	remove_kernel->SetArgument(1, tankBackUpBuffer);
 	remove_kernel->SetArgument(2, tankLastPosBuffer);
 	remove_kernel->SetArgument(3, tankLastTargetBuffer);
+	remove_kernel->SetArgument(4, tank1->frameSize);
 
 }
 
@@ -156,8 +175,8 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
-	Timer t;
 	int tanks = 0;
+	Timer t;
 	// draw the map
 	map.Draw( screen );
 	// rebuild actor grid
@@ -165,40 +184,49 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	pointer->Remove();
-	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
+	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
 	{
+	//	if (!actorPool[i]->GetType() == Actor::TANK)
+	//		actorPool[i]->Remove();
+	}
+
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	for (int i = 0; i < (int)actorPool.size(); i++)
+	{
+
+		if (!actorPool[i]->Tick())
+		{
+			// actor got deleted, replace by last in list
+			Actor* lastActor = actorPool.back();
+			Actor* toDelete = actorPool[i];
+			actorPool.pop_back();
+			if (lastActor != toDelete) actorPool[i] = lastActor;
+			delete toDelete;
+			i--;
+
+		}
 		if (actorPool[i]->GetType() == Actor::TANK)
 			tanks++;
 	}
 
-	remove_kernel->Run2D(int2(36 * 36, actorPool.size()), int2(36, 1));
-
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
-	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
-	{
-		// actor got deleted, replace by last in list
-		Actor* lastActor = actorPool.back();
-		Actor* toDelete = actorPool[i];
-		actorPool.pop_back();
-		if (lastActor != toDelete) actorPool[i] = lastActor;
-		delete toDelete;
-		i--;
-	}
-
 	coolDown++;
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		if(!actorPool[i]->GetType() == Actor::TANK)
-			actorPool[i]->Draw();
-	}
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
+	//for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	//{
+	//	if(!actorPool[i]->GetType() == Actor::TANK)
+	//		actorPool[i]->Draw();
+	//}
+	//deviceBuffer->CopyToDevice(true);
+
 	tankPosBuffer ->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
-	saveLastPos_kernel->Run(tanks);
-	backup_kernel->Run2D(int2(36 * 36,tanks), int2(36, 1));
+	remove_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
 
-	render_kernel->Run2D(int2(35 * 35,tanks), int2(35, 1));
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
+	saveLastPos_kernel->Run(tanks);
+	backup_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
+
+	render_kernel->Run2D(int2(35 * 35, tanks), int2(35, 1));
 
 	deviceBuffer->CopyFromDevice(true);
 
