@@ -8,7 +8,6 @@ TheApp* CreateApp() { return new MyApp(); }
 int totalTanks;
 void MyApp::Init()
 {	
-	std::cout << map.height << std::endl;
 	render_kernel = new Kernel("render.cl", "render");
 	// load tank sprites
 	tank1 = new Sprite( "assets/tanks.png", make_int2( 128, 100 ), make_int2( 310, 360 ), 36, 256 );
