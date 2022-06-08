@@ -77,7 +77,7 @@ class Particle
 {
 public:
 	Particle() = default;
-	Particle( Sprite* s, int2 p, uint c, uint d );
+	Particle( Sprite* s, int2 p, uint c, uint d , int i, int b);
 	void Remove() { sprite.Remove(); }
 	void Tick();
 	void Draw() { sprite.Draw( Map::bitmap, pos, frame ); }
@@ -85,6 +85,7 @@ public:
 	bool hasBackup = false;
 	SpriteInstance sprite;
 	float2 pos, dir;
+	int id, bush;
 };
 
 } // namespace Tmpl8

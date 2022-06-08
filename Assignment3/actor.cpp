@@ -1,7 +1,7 @@
 #include "precomp.h"
 
 // Tank constructor
-Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i )
+Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i)
 {
 	// set position and destination
 	pos = make_float2( p );
@@ -22,9 +22,9 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i )
 	dir = directions[frame];
 
 	id = i;
-	MyApp::tankPos[id] = pos;
-	MyApp::tankFrame[id] = frame;
-	MyApp::tankLastTarget[id] = 0;
+	MyApp::tankPos[army][id] = pos;
+	MyApp::tankFrame[army][id] = frame;
+	MyApp::tankLastTarget[army][id] = 0;
 }
 
 // Tank::Tick : tank behaviour
@@ -100,8 +100,8 @@ bool Tank::Tick()
 	}
 	pos += dir * speed * 0.5f;
 
-	MyApp::tankPos[id] = pos;
-	MyApp::tankFrame[id] = frame;
+	MyApp::tankPos[army][id] = pos;
+	MyApp::tankFrame[army][id] = frame;
 	// tanks never die
 	return true;
 }
@@ -259,13 +259,15 @@ SpriteExplosion::SpriteExplosion( Bullet* bullet )
 }
 
 // Particle constructor
-Particle::Particle( Sprite* s, int2 p, uint c, uint d )
+Particle::Particle( Sprite* s, int2 p, uint c, uint d , int i, int b)
 {
 	pos = make_float2( p );
 	dir = make_float2( -1 - RandomFloat() * 4, 0 );
 	color = c;
 	frameChange = d;
 	sprite = SpriteInstance( s );
+	id = i;
+	bush = b;
 }
 
 // Particle behaviour
@@ -288,4 +290,6 @@ void Particle::Tick()
 	}
 	dir.y += RandomFloat() * 0.05f - 0.025f;
 	frame = (frame + frameChange + 256) & 255;
+	MyApp::bushFrame[bush][id] = frame;
+	MyApp::bushPos[bush][id] = pos;
 }
