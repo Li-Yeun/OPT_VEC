@@ -13,8 +13,8 @@ public:
 	void ScaleAlpha( uint scale );
 	uint* pixels;
 	int frameCount, frameSize;
-	static inline Kernel* sprite_kernel;
-	static inline Buffer* sprite_buffer;
+	Kernel* sprite_kernel;
+	Buffer* sprite_buffer;
 };
 
 class SpriteInstance

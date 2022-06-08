@@ -26,7 +26,7 @@ __kernel void render(__global volatile uint* buffer, __global uint* sprite, __gl
 	uint w2 = (frac_x * (255 - frac_y)) >> 8;
 	uint w3 = ((255 - frac_x) * (255 - frac_y)) >> 8;
 	// draw the sprite frame
-	uint stride = frame_count * frame_count;
+	uint stride = sprite_framesize * frame_count;
 	uint dst = x1 + (y1 + v) * MAP_WIDTH + u;
 	uint src = frame[y] * sprite_framesize + v * stride + u;
 	//for (int v = 0; v < SPRITE_FRAMESIZE - 1; v++)

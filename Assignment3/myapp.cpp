@@ -14,7 +14,7 @@ void MyApp::Init()
 
 	//render_kernel = new Kernel("render.cl", "render");
 	//Kernel* tank1_kernel = new Kernel("render.cl", "render");
-	int group1 = 16, group2 = 12, group3 = 8, particle_count = 7500;
+	int group1 = 16, group2 = 12, group3 = 8, particle_count = 7500, particle_group_size = 2500;
 	tanksPerArmy = (group1 * group1 + group2 * group2 + group3 * group3);
 	tankPos = new float2 * [2];
 	tankPos[0] = new float2[tanksPerArmy];
@@ -30,21 +30,21 @@ void MyApp::Init()
 	tankFrameBuffer[1] = new Buffer(tanksPerArmy, 0, tankFrame[1]);
 
 	bushPos = new float2*[3];
-	bushPos[0] = new float2[particle_count / 3];
-	bushPos[1] = new float2[particle_count / 3];
-	bushPos[2] = new float2[particle_count / 3];
+	bushPos[0] = new float2[particle_group_size];
+	bushPos[1] = new float2[particle_group_size];
+	bushPos[2] = new float2[particle_group_size];
 	bushFrame = new int*[3];
-	bushFrame[0] = new int[particle_count / 3];
-	bushFrame[1] = new int[particle_count / 3];
-	bushFrame[2] = new int[particle_count / 3];
+	bushFrame[0] = new int[particle_group_size];
+	bushFrame[1] = new int[particle_group_size];
+	bushFrame[2] = new int[particle_group_size];
 	bushPosBuffer = new Buffer * [3];
-	bushPosBuffer[0] = new Buffer(2 * particle_count / 3, 0, bushPos[0]);
-	bushPosBuffer[1] = new Buffer(2 * particle_count / 3, 0, bushPos[1]);
-	bushPosBuffer[2] = new Buffer(2 * particle_count / 3, 0, bushPos[2]);
+	bushPosBuffer[0] = new Buffer(2 * particle_group_size, 0, bushPos[0]);
+	bushPosBuffer[1] = new Buffer(2 * particle_group_size, 0, bushPos[1]);
+	bushPosBuffer[2] = new Buffer(2 * particle_group_size, 0, bushPos[2]);
 	bushFrameBuffer = new Buffer *[3];
-	bushFrameBuffer[0] = new Buffer(particle_count / 3, 0, bushFrame[0]);
-	bushFrameBuffer[1] = new Buffer(particle_count / 3, 0, bushFrame[1]);
-	bushFrameBuffer[2] = new Buffer(particle_count / 3, 0, bushFrame[2]);
+	bushFrameBuffer[0] = new Buffer(particle_group_size, 0, bushFrame[0]);
+	bushFrameBuffer[1] = new Buffer(particle_group_size, 0, bushFrame[1]);
+	bushFrameBuffer[2] = new Buffer(particle_group_size, 0, bushFrame[2]);
 
 	deviceBuffer = new Buffer(map.width * map.height, Buffer::DEFAULT, Map::bitmap->pixels);
 
@@ -64,6 +64,10 @@ void MyApp::Init()
 	bush[1]->SetKernel(bushPosBuffer[1], bushFrameBuffer[1]);
 	bush[2]->SetKernel(bushPosBuffer[2], bushFrameBuffer[2]);
 	cout << "SPRITES LOADED..." << endl;
+	cout << "SANITY CHECK" << endl;
+	cout << "BUSH 1 FRAME SIZE: " << bush[0]->frameSize << " == " << 10 << endl;
+	cout << "BUSH 2 FRAME SIZE: " << bush[1]->frameSize << " == " << 14 << endl;
+	cout << "BUSH 3 FRAME SIZE: " << bush[2]->frameSize << " == " << 20 << endl;
 	// pointer
 	pointer = new SpriteInstance( new Sprite( "assets/pointer.png" ) );
 	// create armies
@@ -107,13 +111,12 @@ void MyApp::Init()
 		if ((p & 0xffff) == 0) peaks.push_back( make_float3( make_int3( x * 8, y * 8, (p >> 16) & 255 ) ) );
 	}
 	// add sandstorm
-	int id = 0;
-	for( int i = 0; i < particle_count; i++, id++)
+	for( int i = 0; i < particle_count; i++)
 	{
 		int x = RandomUInt() % map.bitmap->width;
 		int y = RandomUInt() % map.bitmap->height;
 		int d = (RandomUInt() & 15) - 8;
-		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d , id / 3, i % 3));
+		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d , i / 3, i % 3));
 	}
 	// place flags
 	Surface* flagPattern = new Surface( "assets/flag.png" );
@@ -196,6 +199,9 @@ void MyApp::Init()
 
 	tank1->sprite_buffer->CopyToDevice(true);
 	tank2->sprite_buffer->CopyToDevice(true);
+	bush[0]->sprite_buffer->CopyToDevice(true);
+	bush[1]->sprite_buffer->CopyToDevice(true);
+	bush[2]->sprite_buffer->CopyToDevice(true);
 	cout << "SPRITE BUFFERS COPIED TO DEVICE..." << endl;
 	deviceBuffer->CopyToDevice();
 	cout << "MAP BUFFER COPIED TO DEVICE..." << endl;
@@ -256,13 +262,12 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate(tankPool);
 	// update and render actors
 	pointer->Remove();
-	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
+	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
+	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
 
 	//for (int s = (int)tankPool.size(), i = s - 1; i >= 0; i--) tankPool[i]->Remove();
 
-	cout << "CHECK 0" << endl;
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
 		// actor got deleted, replace by last in list
@@ -293,39 +298,45 @@ void MyApp::Tick( float deltaTime )
 	//{
 	//	tankPool[i]->Draw();
 	//}
-	cout << "CHECK 1" << endl;
+
 	tankPosBuffer[0]->CopyToDevice(true);
 	tankPosBuffer[1]->CopyToDevice(true);
-	cout << "CHECK 2" << endl;
+
 	tankFrameBuffer[0]->CopyToDevice(true);
 	tankFrameBuffer[1]->CopyToDevice(true);
-	cout << "CHECK 3" << endl;
+
+	bushPosBuffer[0]->CopyFromDevice(true);
+	bushPosBuffer[1]->CopyFromDevice(true);
+	bushPosBuffer[2]->CopyFromDevice(true);
+
+	bushFrameBuffer[0]->CopyToDevice(true);
+	bushFrameBuffer[1]->CopyToDevice(true);
+	bushFrameBuffer[2]->CopyToDevice(true);
+
 	remove_kernel[0]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
 	remove_kernel[1]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
-	cout << "CHECK 4" << endl;
+
 
 	saveLastPos_kernel[0]->Run(tanksPerArmy);
 	saveLastPos_kernel[1]->Run(tanksPerArmy);
-	cout << "CHECK 5" << endl;
+
 
 	backup_kernel[0]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
 	backup_kernel[1]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
-	cout << "CHECK 6" << endl;
+
 
 	tank1->sprite_kernel->Run2D(int2(35 * 35, tanksPerArmy), int2(35, 1));
 	tank2->sprite_kernel->Run2D(int2(35 * 35, tanksPerArmy), int2(35, 1));
-	cout << "CHECK 7" << endl;
-	bush[0]->sprite_kernel->Run2D(int2((bush[0]->frameSize - 1) * (bush[0]->frameSize - 1), 2500), int2(bush[0]->frameSize - 1, 1));
-	bush[1]->sprite_kernel->Run2D(int2((bush[1]->frameSize - 1) * (bush[1]->frameSize - 1), 2500), int2(bush[1]->frameSize - 1, 1));
-	bush[2]->sprite_kernel->Run2D(int2((bush[2]->frameSize - 1) * (bush[2]->frameSize - 1), 2500), int2(bush[2]->frameSize - 1, 1));
-	cout << "CHECK 8" << endl;
+
+	//bush[0]->sprite_kernel->Run2D(int2(9 * 9, 2500), int2(9, 1));
+	//bush[1]->sprite_kernel->Run2D(int2(13 * 13, 2500), int2(13, 1));
+	//bush[2]->sprite_kernel->Run2D(int2(19 * 19, 2500), int2(19, 1));
+
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
 
 	deviceBuffer->CopyFromDevice(true);
-	cout << "CHECK 9" << endl;
 
 	clFinish(Kernel::GetQueue());
-	cout << "CHECK 10" << endl;
 	int2 cursorPos = map.ScreenToMap( mousePos );
 	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse

@@ -128,19 +128,18 @@ Sprite::Sprite( const char* fileName, int2 topLeft, int2 bottomRight, int size, 
 	frameSize = size;
 }
 
-void Sprite::SetKernel(Buffer* posBuffer, Buffer* frameBuffer) {
-	if (sprite_kernel == 0) {
-		sprite_kernel = new Kernel("render.cl", "render");
-		sprite_buffer = new Buffer(frameSize * frameSize * frameCount, 0, pixels);
+void Sprite::SetKernel(Buffer* posBuffer, Buffer* frameBuffer) 
+{
+	sprite_kernel = new Kernel("render.cl", "render");
+	sprite_buffer = new Buffer(frameSize * frameSize * frameCount, 0, pixels);
 
-		sprite_kernel->SetArgument(0, MyApp::deviceBuffer);
-		sprite_kernel->SetArgument(1, sprite_buffer);
-		sprite_kernel->SetArgument(2, posBuffer);
-		sprite_kernel->SetArgument(3, frameBuffer);
-		sprite_kernel->SetArgument(4, frameSize);
-		sprite_kernel->SetArgument(5, frameCount);
+	sprite_kernel->SetArgument(0, MyApp::deviceBuffer);
+	sprite_kernel->SetArgument(1, sprite_buffer);
+	sprite_kernel->SetArgument(2, posBuffer);
+	sprite_kernel->SetArgument(3, frameBuffer);
+	sprite_kernel->SetArgument(4, frameSize);
+	sprite_kernel->SetArgument(5, frameCount);
 
-	}
 }
 
 void Sprite::ScaleAlpha( uint scale )
