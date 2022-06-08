@@ -150,21 +150,20 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
 	lastPos = make_int2( x1, y1 );
 	lastTarget = target;
 
 	int sprite_frameSize = sprite->frameSize;
-	/*
-	MyApp::backup_kernel->SetArgument(1, backup_buffer);
-	MyApp::backup_kernel->SetArgument(2, lastPos.x);
-	MyApp::backup_kernel->SetArgument(3, lastPos.y);
-	MyApp::backup_kernel->Run(sprite_frameSize * sprite_frameSize);
 	
-	MyApp::render_kernel->SetArgument(2, pos);
-	MyApp::render_kernel->SetArgument(3, frame);
-	MyApp::render_kernel->Run((sprite_frameSize-1)* (sprite_frameSize-1));
-	*/
+	//MyApp::backup_kernel->SetArgument(1, backup_buffer);
+	//MyApp::backup_kernel->SetArgument(2, lastPos.x);
+	//MyApp::backup_kernel->SetArgument(3, lastPos.y);
+	//MyApp::backup_kernel->Run(sprite_frameSize * sprite_frameSize);
+	
+	//MyApp::render_kernel->SetArgument(2, pos);
+	//MyApp::render_kernel->SetArgument(3, frame);
+	//MyApp::render_kernel->Run((sprite_frameSize-1)* (sprite_frameSize-1));
+	
 
 }
 
@@ -203,7 +202,6 @@ void SpriteInstance::Remove()
 	// note: sprites must be removed in reverse order to guarantee correct removal.
 	if (lastTarget) for (int v = 0; v < sprite->frameSize; v++)
 	{
-		//MyApp::remove_kernel->SetArgument(1, backup_buffer);
 		//MyApp::remove_kernel->SetArgument(2, lastPos.x);
 		//MyApp::remove_kernel->SetArgument(3, lastPos.y);
 		//MyApp::remove_kernel->Run(sprite->frameSize * sprite->frameSize);

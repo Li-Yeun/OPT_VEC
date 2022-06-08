@@ -1,4 +1,5 @@
 #define MAP_WIDTH 4096
+#define MAP_HEIGHT 2732
 #define SPRITE_FRAMECOUNT 256
 #define SPRITE_FRAMESIZE 36
 
@@ -39,21 +40,43 @@ __kernel void render(__global uint* buffer, __global uint* sprite, __global floa
     uint alpha = pix >> 24;
     buffer[dst] = ScaleColor( pix, alpha ) + ScaleColor(buffer[dst] , 255 - alpha );
 }
-
-__kernel void remove(__global uint* buffer, __global uint* backup, int lastPosX, int lastPosY)
+__kernel void saveLastPos( __global float2* pos, __global int2* lastPos, __global int* lastTarget)
 {
     int x = get_global_id(0);
-    int v = x / (SPRITE_FRAMESIZE);
-    int u = x % (SPRITE_FRAMESIZE);
 
-    buffer[lastPosX + (lastPosY + v) * MAP_WIDTH + u] = backup[v * SPRITE_FRAMESIZE + u];
+	int2 intPos = (int2)(pos[x].x, pos[x].y);
+	int x1 = intPos.x - SPRITE_FRAMESIZE / 2, x2 = x1 + SPRITE_FRAMESIZE;
+	int y1 = intPos.y - SPRITE_FRAMESIZE / 2, y2 = y1 + SPRITE_FRAMESIZE;
+	if (x1 < 0 || y1 < 0 || x2 >= MAP_WIDTH || y2 >= MAP_HEIGHT)
+	{
+		// out of range; skip
+		lastTarget[x] = 0;
+		return;
+	}
+	lastPos[x] = (int2)( x1, y1 );
+	lastTarget[x] = 1;
 }
 
-__kernel void backup(__global uint* buffer, __global uint* backup,  int lastPosX, int lastPosY)
+__kernel void backup(__global uint* buffer, __global uint* backup, __global int2* lastPos)
 {
     int x = get_global_id(0);
+    int y = get_global_id(1);   
+
     int v = x / (SPRITE_FRAMESIZE);
     int u = x % (SPRITE_FRAMESIZE);
 
-    backup[v * SPRITE_FRAMESIZE + u] = buffer[lastPosX + (lastPosY + v) * MAP_WIDTH + u];
+    backup[v * SPRITE_FRAMESIZE + u + y * (SPRITE_FRAMESIZE + 1)* (SPRITE_FRAMESIZE + 1)] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
+}
+
+__kernel void remove(__global uint* buffer, __global uint* backup, __global int2* lastPos, __global int* lastTarget)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(!lastTarget[y]) return;
+    
+    int v = x / (SPRITE_FRAMESIZE);
+    int u = x % (SPRITE_FRAMESIZE);
+
+    buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backup[v * SPRITE_FRAMESIZE + u +  y *  (SPRITE_FRAMESIZE + 1 )* (SPRITE_FRAMESIZE + 1)];
 }

@@ -35,14 +35,21 @@ public:
 	static inline int coolDown = 0;				// used to prevent simultaneous firing
 	static inline Kernel* render_kernel;
 	static inline Kernel* remove_kernel;
+	static inline Kernel* saveLastPos_kernel;
 	static inline Kernel* backup_kernel;
 	static inline Buffer* deviceBuffer;
 	static inline Buffer* spriteBuffer;
+
 	static inline Buffer* tankPosBuffer;
+	static inline Buffer* tankLastPosBuffer;
+	static inline Buffer* tankBackUpBuffer;
+	static inline Buffer* tankLastTargetBuffer;
+
 	static inline Buffer* tankFrameBuffer;
 
 	static inline float2* tankPos;
 	static inline int* tankFrame;
+	static inline int* tankLastTarget;
 };
 
 } // namespace Tmpl8
