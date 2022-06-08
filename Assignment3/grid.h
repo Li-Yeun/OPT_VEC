@@ -18,6 +18,7 @@ public:
 	Grid() = default;
 	void Clear();
 	void Populate( const vector<Actor*>& actors );
+	void Populate(const vector<Tank*>& actors);
 	ActorList& FindNearbyTanks( Tank* aTank, float radius = 30 );
 	ActorList& FindNearbyTanks( float2 position, float radius = 30, Tank* tank = 0 );
 	ActorList cell[GRIDSIZE * GRIDSIZE];

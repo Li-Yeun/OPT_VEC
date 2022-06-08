@@ -1,7 +1,7 @@
 #include "precomp.h"
 
 // Tank constructor
-Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a )
+Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i )
 {
 	// set position and destination
 	pos = make_float2( p );
@@ -20,6 +20,10 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a )
 	}
 	// set direction based on specified orientation
 	dir = directions[frame];
+
+	id = i;
+	MyApp::tankPos[id] = pos;
+	MyApp::tankFrame[id] = frame;
 }
 
 // Tank::Tick : tank behaviour
@@ -94,6 +98,9 @@ bool Tank::Tick()
 		MyApp::map.bitmap->BlendBilerp( trackPos2.x, trackPos2.y, 0, 12 );
 	}
 	pos += dir * speed * 0.5f;
+
+	MyApp::tankPos[id] = pos;
+	MyApp::tankFrame[id] = frame;
 	// tanks never die
 	return true;
 }

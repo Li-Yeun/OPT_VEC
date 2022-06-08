@@ -153,30 +153,19 @@ void SpriteInstance::Draw( Surface* target, float2 pos, int frame )
 	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
 	lastPos = make_int2( x1, y1 );
 	lastTarget = target;
-	// calculate bilinear weights - these are constant in this case.
-	uint frac_x = (int)(255.0f * (pos.x - floorf( pos.x )));
-	uint frac_y = (int)(255.0f * (pos.y - floorf( pos.y )));
-	uint w0 = (frac_x * frac_y) >> 8;
-	uint w1 = ((255 - frac_x) * frac_y) >> 8;
-	uint w2 = (frac_x * (255 - frac_y)) >> 8;
-	uint w3 = ((255 - frac_x) * (255 - frac_y)) >> 8;
-	// draw the sprite frame
-	uint stride = sprite->frameCount * sprite->frameSize;
-	for (int v = 0; v < sprite->frameSize - 1; v++)
-	{
-		uint* dst = target->pixels + x1 + (y1 + v) * target->width;
-		uint* src = sprite->pixels + frame * sprite->frameSize + v * stride;
-		for (int u = 0; u < sprite->frameSize - 1; u++, src++, dst++ )
-		{
-			uint p0 = ScaleColor( src[0], w0 );
-			uint p1 = ScaleColor( src[1], w1 );
-			uint p2 = ScaleColor( src[stride], w2 );
-			uint p3 = ScaleColor( src[stride + 1], w3 );
-			uint pix = p0 + p1 + p2 + p3;
-			uint alpha = pix >> 24;
-			*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-		}
-	}
+
+	int sprite_frameSize = sprite->frameSize;
+	/*
+	MyApp::backup_kernel->SetArgument(1, backup_buffer);
+	MyApp::backup_kernel->SetArgument(2, lastPos.x);
+	MyApp::backup_kernel->SetArgument(3, lastPos.y);
+	MyApp::backup_kernel->Run(sprite_frameSize * sprite_frameSize);
+	
+	MyApp::render_kernel->SetArgument(2, pos);
+	MyApp::render_kernel->SetArgument(3, frame);
+	MyApp::render_kernel->Run((sprite_frameSize-1)* (sprite_frameSize-1));
+	*/
+
 }
 
 void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
@@ -192,7 +181,10 @@ void SpriteInstance::DrawAdditive( Surface* target, float2 pos, int frame )
 		lastTarget = 0;
 		return;
 	}
-	for (int v = 0; v < sprite->frameSize; v++) memcpy( backup + v * sprite->frameSize, target->pixels + x1 + (y1 + v) * target->width, sprite->frameSize * 4 );
+	//MyApp::remove_kernel->SetArgument(1, backup_buffer);
+	//MyApp::remove_kernel->SetArgument(2, lastPos.x);
+	//MyApp::remove_kernel->SetArgument(3, lastPos.y);
+	//MyApp::remove_kernel->Run(sprite->frameSize * sprite->frameSize);
 	// draw the sprite frame
 	for (int v = 0; v < sprite->frameSize; v++) for (int u = 0; u < sprite->frameSize; u++)
 	{
@@ -211,7 +203,9 @@ void SpriteInstance::Remove()
 	// note: sprites must be removed in reverse order to guarantee correct removal.
 	if (lastTarget) for (int v = 0; v < sprite->frameSize; v++)
 	{
-		memcpy( lastTarget->pixels + lastPos.x + (lastPos.y + v) * lastTarget->width,
-			backup + v * sprite->frameSize, sprite->frameSize * 4 );
+		//MyApp::remove_kernel->SetArgument(1, backup_buffer);
+		//MyApp::remove_kernel->SetArgument(2, lastPos.x);
+		//MyApp::remove_kernel->SetArgument(3, lastPos.y);
+		//MyApp::remove_kernel->Run(sprite->frameSize * sprite->frameSize);
 	}
 }
