@@ -8,11 +8,9 @@ TheApp* CreateApp() { return new MyApp(); }
 int totalTanks;
 void MyApp::Init()
 {	
+	Kernel::InitCL();
 	// initialize map view
 	map.UpdateView(screen, zoom);
-	std::cout << map.height << std::endl;
-	std::cout << map.width << std::endl;
-	deviceBuffer = new Buffer(map.width * map.height, 0, Map::bitmap->pixels);
 
 	//render_kernel = new Kernel("render.cl", "render");
 	//Kernel* tank1_kernel = new Kernel("render.cl", "render");
@@ -40,13 +38,15 @@ void MyApp::Init()
 	bushFrame[1] = new int[particle_count / 3];
 	bushFrame[2] = new int[particle_count / 3];
 	bushPosBuffer = new Buffer * [3];
-	bushPosBuffer[0] = new Buffer(particle_count / 3, 0, bushPos[0]);
-	bushPosBuffer[1] = new Buffer(particle_count / 3, 0, bushPos[1]);
-	bushPosBuffer[2] = new Buffer(particle_count / 3, 0, bushPos[2]);
+	bushPosBuffer[0] = new Buffer(2 * particle_count / 3, 0, bushPos[0]);
+	bushPosBuffer[1] = new Buffer(2 * particle_count / 3, 0, bushPos[1]);
+	bushPosBuffer[2] = new Buffer(2 * particle_count / 3, 0, bushPos[2]);
 	bushFrameBuffer = new Buffer *[3];
 	bushFrameBuffer[0] = new Buffer(particle_count / 3, 0, bushFrame[0]);
 	bushFrameBuffer[1] = new Buffer(particle_count / 3, 0, bushFrame[1]);
 	bushFrameBuffer[2] = new Buffer(particle_count / 3, 0, bushFrame[2]);
+
+	deviceBuffer = new Buffer(map.width * map.height, Buffer::DEFAULT, Map::bitmap->pixels);
 
 	// load tank sprites
 	tank1 = new Sprite( "assets/tanks.png", make_int2( 128, 100 ), make_int2( 310, 360 ), 36, 256 );
@@ -96,6 +96,9 @@ void MyApp::Init()
 		tankPool.push_back(army1Tank);
 		tankPool.push_back(army2Tank);
 	}
+	cout << "SANITY CHECK" << endl;
+	cout << "ARMY 1 TANKS: " << id1 << " == " << totalTanks << endl;
+	cout << "ARMY 2 TANKS: " << id2 << " == " << totalTanks << endl;
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -128,8 +131,8 @@ void MyApp::Init()
 	tankLastPosBuffer[0] = new Buffer(totalTanks * 2);
 	tankLastPosBuffer[1] = new Buffer(totalTanks * 2);
 	tankBackUpBuffer = new Buffer * [2];
-	tankBackUpBuffer[0] = new Buffer(totalTanks / 2 * sqr(tank1->frameSize + 1));
-	tankBackUpBuffer[1] = new Buffer(totalTanks / 2 * sqr(tank2->frameSize + 1));
+	tankBackUpBuffer[0] = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
+	tankBackUpBuffer[1] = new Buffer(totalTanks * sqr(tank2->frameSize + 1));
 	tankLastTargetBuffer = new Buffer * [2];
 	tankLastTargetBuffer[0] = new Buffer(totalTanks, 0, tankLastTarget[0]);
 	tankLastTargetBuffer[1] = new Buffer(totalTanks, 0, tankLastTarget[1]);
@@ -194,7 +197,7 @@ void MyApp::Init()
 	tank1->sprite_buffer->CopyToDevice(true);
 	tank2->sprite_buffer->CopyToDevice(true);
 	cout << "SPRITE BUFFERS COPIED TO DEVICE..." << endl;
-	deviceBuffer->CopyToDevice(true);
+	deviceBuffer->CopyToDevice();
 	cout << "MAP BUFFER COPIED TO DEVICE..." << endl;
 	cout << "INIT FINISHED!" << endl;
 
@@ -257,9 +260,8 @@ void MyApp::Tick( float deltaTime )
 	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
 
 	//for (int s = (int)tankPool.size(), i = s - 1; i >= 0; i--) tankPool[i]->Remove();
-	remove_kernel[0]->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
-	remove_kernel[1]->Run2D(int2(tank2->frameSize * tank2->frameSize, totalTanks), int2(tank2->frameSize, 1));
 
+	cout << "CHECK 0" << endl;
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
@@ -283,29 +285,47 @@ void MyApp::Tick( float deltaTime )
 		i--;
 	}
 	coolDown++;
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		//actorPool[i]->Draw();
-	}
-	for (int s = (int)tankPool.size(), i = 0; i < s; i++)
-	{
-		//tankPool[i]->Draw();
-	}
+	//for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	//{
+	//	actorPool[i]->Draw();
+	//}
+	//for (int s = (int)tankPool.size(), i = 0; i < s; i++)
+	//{
+	//	tankPool[i]->Draw();
+	//}
+	cout << "CHECK 1" << endl;
 	tankPosBuffer[0]->CopyToDevice(true);
 	tankPosBuffer[1]->CopyToDevice(true);
+	cout << "CHECK 2" << endl;
 	tankFrameBuffer[0]->CopyToDevice(true);
 	tankFrameBuffer[1]->CopyToDevice(true);
+	cout << "CHECK 3" << endl;
+	remove_kernel[0]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	remove_kernel[1]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	cout << "CHECK 4" << endl;
+
 	saveLastPos_kernel[0]->Run(totalTanks);
 	saveLastPos_kernel[1]->Run(totalTanks);
-	backup_kernel[0]->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
-	backup_kernel[1]->Run2D(int2(tank2->frameSize * tank2->frameSize, totalTanks), int2(tank2->frameSize, 1));
+	cout << "CHECK 5" << endl;
 
-	tank1->sprite_kernel->Run2D(int2((tank1->frameSize - 1) * (tank1->frameSize - 1), totalTanks), int2(tank1->frameSize - 1, 1));
-	tank2->sprite_kernel->Run2D(int2((tank2->frameSize - 1) * (tank2->frameSize - 1), totalTanks), int2(tank2->frameSize - 1, 1));
+	backup_kernel[0]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	backup_kernel[1]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	cout << "CHECK 6" << endl;
+
+	tank1->sprite_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
+	tank2->sprite_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
+	cout << "CHECK 7" << endl;
+	bush[0]->sprite_kernel->Run2D(int2((bush[0]->frameSize - 1) * (bush[0]->frameSize - 1), 2500), int2(bush[0]->frameSize - 1, 1));
+	bush[1]->sprite_kernel->Run2D(int2((bush[1]->frameSize - 1) * (bush[1]->frameSize - 1), 2500), int2(bush[1]->frameSize - 1, 1));
+	bush[2]->sprite_kernel->Run2D(int2((bush[2]->frameSize - 1) * (bush[2]->frameSize - 1), 2500), int2(bush[2]->frameSize - 1, 1));
+	cout << "CHECK 8" << endl;
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
 
 	deviceBuffer->CopyFromDevice(true);
+	cout << "CHECK 9" << endl;
 
+	clFinish(Kernel::GetQueue());
+	cout << "CHECK 10" << endl;
 	int2 cursorPos = map.ScreenToMap( mousePos );
 	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
