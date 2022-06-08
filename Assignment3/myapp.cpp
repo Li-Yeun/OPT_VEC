@@ -5,7 +5,7 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
-int totalTanks;
+int tanksPerArmy;
 void MyApp::Init()
 {	
 	Kernel::InitCL();
@@ -15,19 +15,19 @@ void MyApp::Init()
 	//render_kernel = new Kernel("render.cl", "render");
 	//Kernel* tank1_kernel = new Kernel("render.cl", "render");
 	int group1 = 16, group2 = 12, group3 = 8, particle_count = 7500;
-	totalTanks = (group1 * group1 + group2 * group2 + group3 * group3);
+	tanksPerArmy = (group1 * group1 + group2 * group2 + group3 * group3);
 	tankPos = new float2 * [2];
-	tankPos[0] = new float2[totalTanks];
-	tankPos[1] = new float2[totalTanks];
+	tankPos[0] = new float2[tanksPerArmy];
+	tankPos[1] = new float2[tanksPerArmy];
 	tankFrame = new int* [2];
-	tankFrame[0] = new int[totalTanks];
-	tankFrame[1] = new int[totalTanks];
+	tankFrame[0] = new int[tanksPerArmy];
+	tankFrame[1] = new int[tanksPerArmy];
 	tankPosBuffer = new Buffer * [2];
-	tankPosBuffer[0] = new Buffer(totalTanks * 2, 0, tankPos[0]);
-	tankPosBuffer[1] = new Buffer(totalTanks * 2, 0, tankPos[1]);
+	tankPosBuffer[0] = new Buffer(tanksPerArmy * 2, 0, tankPos[0]);
+	tankPosBuffer[1] = new Buffer(tanksPerArmy * 2, 0, tankPos[1]);
 	tankFrameBuffer = new Buffer * [2];
-	tankFrameBuffer[0] = new Buffer(totalTanks, 0, tankFrame[0]);
-	tankFrameBuffer[1] = new Buffer(totalTanks, 0, tankFrame[1]);
+	tankFrameBuffer[0] = new Buffer(tanksPerArmy, 0, tankFrame[0]);
+	tankFrameBuffer[1] = new Buffer(tanksPerArmy, 0, tankFrame[1]);
 
 	bushPos = new float2*[3];
 	bushPos[0] = new float2[particle_count / 3];
@@ -69,8 +69,8 @@ void MyApp::Init()
 	// create armies
 	int id1 = 0, id2 = 0;
 	tankLastTarget = new int* [2];
-	tankLastTarget[0] = new int[totalTanks];
-	tankLastTarget[1] = new int[totalTanks];
+	tankLastTarget[0] = new int[tanksPerArmy];
+	tankLastTarget[1] = new int[tanksPerArmy];
 
 
 	for (int y = 0; y < group1; y++) for (int x = 0; x < group1; x++) // main groups
@@ -97,8 +97,8 @@ void MyApp::Init()
 		tankPool.push_back(army2Tank);
 	}
 	cout << "SANITY CHECK" << endl;
-	cout << "ARMY 1 TANKS: " << id1 << " == " << totalTanks << endl;
-	cout << "ARMY 2 TANKS: " << id2 << " == " << totalTanks << endl;
+	cout << "ARMY 1 TANKS: " << id1 << " == " << tanksPerArmy << endl;
+	cout << "ARMY 2 TANKS: " << id2 << " == " << tanksPerArmy << endl;
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -128,14 +128,14 @@ void MyApp::Init()
 	//spriteBuffer = new Buffer(tank1->frameSize * tank1->frameSize * tank1->frameCount, 0, tank1->pixels);
 
 	tankLastPosBuffer = new Buffer * [2];
-	tankLastPosBuffer[0] = new Buffer(totalTanks * 2);
-	tankLastPosBuffer[1] = new Buffer(totalTanks * 2);
+	tankLastPosBuffer[0] = new Buffer(tanksPerArmy * 2);
+	tankLastPosBuffer[1] = new Buffer(tanksPerArmy * 2);
 	tankBackUpBuffer = new Buffer * [2];
-	tankBackUpBuffer[0] = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
-	tankBackUpBuffer[1] = new Buffer(totalTanks * sqr(tank2->frameSize + 1));
+	tankBackUpBuffer[0] = new Buffer(tanksPerArmy * sqr(tank1->frameSize + 1));
+	tankBackUpBuffer[1] = new Buffer(tanksPerArmy * sqr(tank2->frameSize + 1));
 	tankLastTargetBuffer = new Buffer * [2];
-	tankLastTargetBuffer[0] = new Buffer(totalTanks, 0, tankLastTarget[0]);
-	tankLastTargetBuffer[1] = new Buffer(totalTanks, 0, tankLastTarget[1]);
+	tankLastTargetBuffer[0] = new Buffer(tanksPerArmy, 0, tankLastTarget[0]);
+	tankLastTargetBuffer[1] = new Buffer(tanksPerArmy, 0, tankLastTarget[1]);
 
 	
 
@@ -300,20 +300,20 @@ void MyApp::Tick( float deltaTime )
 	tankFrameBuffer[0]->CopyToDevice(true);
 	tankFrameBuffer[1]->CopyToDevice(true);
 	cout << "CHECK 3" << endl;
-	remove_kernel[0]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
-	remove_kernel[1]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	remove_kernel[0]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
+	remove_kernel[1]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
 	cout << "CHECK 4" << endl;
 
-	saveLastPos_kernel[0]->Run(totalTanks);
-	saveLastPos_kernel[1]->Run(totalTanks);
+	saveLastPos_kernel[0]->Run(tanksPerArmy);
+	saveLastPos_kernel[1]->Run(tanksPerArmy);
 	cout << "CHECK 5" << endl;
 
-	backup_kernel[0]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
-	backup_kernel[1]->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	backup_kernel[0]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
+	backup_kernel[1]->Run2D(int2(36 * 36, tanksPerArmy), int2(36, 1));
 	cout << "CHECK 6" << endl;
 
-	tank1->sprite_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
-	tank2->sprite_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
+	tank1->sprite_kernel->Run2D(int2(35 * 35, tanksPerArmy), int2(35, 1));
+	tank2->sprite_kernel->Run2D(int2(35 * 35, tanksPerArmy), int2(35, 1));
 	cout << "CHECK 7" << endl;
 	bush[0]->sprite_kernel->Run2D(int2((bush[0]->frameSize - 1) * (bush[0]->frameSize - 1), 2500), int2(bush[0]->frameSize - 1, 1));
 	bush[1]->sprite_kernel->Run2D(int2((bush[1]->frameSize - 1) * (bush[1]->frameSize - 1), 2500), int2(bush[1]->frameSize - 1, 1));
