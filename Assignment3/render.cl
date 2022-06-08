@@ -38,7 +38,15 @@ __kernel void render(__global uint* buffer, __global uint* sprite, __global floa
     uint p3 = ScaleColor( sprite[src + stride + 1], w3 );
     uint pix = p0 + p1 + p2 + p3;
     uint alpha = pix >> 24;
-    buffer[dst] = ScaleColor( pix, alpha ) + ScaleColor(buffer[dst] , 255 - alpha );
+
+    // Get old pixel from a nonsense automic operation
+    uint oldpixel = atomic_add(buffer + dst, 0);
+    // Keep trying to write to the buffer until the buffer held the same pixel you read before.
+    while (true) {
+        uint newoldpixel = atomic_cmpxchg(buffer + dst, oldpixel, ScaleColor(pix, alpha) + ScaleColor(oldpixel, 255 - alpha));
+        if (newoldpixel == oldpixel) break;
+        else oldpixel = newoldpixel;
+    }
 }
 __kernel void saveLastPos( __global float2* pos, __global int2* lastPos, __global int* lastTarget)
 {
@@ -74,7 +82,7 @@ __kernel void remove(__global uint* buffer, __global uint* backup, __global int2
     int y = get_global_id(1);
 
     if(!lastTarget[y]) return;
-    
+
     int v = x / (SPRITE_FRAMESIZE);
     int u = x % (SPRITE_FRAMESIZE);
 

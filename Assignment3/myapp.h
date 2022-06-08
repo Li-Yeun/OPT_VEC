@@ -28,7 +28,6 @@ public:
 	// static data, for global access
 	static inline Map map;						// the map
 	static inline vector<Actor*> actorPool;		// actor pool
-	static inline vector<Tank*> tankPool;		// actor pool
 	static inline vector<float3> peaks;			// mountain peaks to evade
 	static inline vector<Particle*> sand;		// sand particles
 	static inline Grid grid;					// actor grid for faster range queries

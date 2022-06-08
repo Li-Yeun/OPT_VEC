@@ -33,24 +33,24 @@ void MyApp::Init()
 	{
 		Tank* army1Tank = new Tank( tank1, make_int2( 520 + x * 32, 2420 - y * 32 ), make_int2( 5000, -500 ), 0, 0, id++ );
 		Tank* army2Tank = new Tank( tank2, make_int2( 3300 - x * 32, y * 32 + 700 ), make_int2( -1000, 4000 ), 10, 1, id++ );
-		tankPool.push_back(army1Tank);
-		tankPool.push_back(army2Tank);
+		actorPool.push_back(army1Tank);
+		actorPool.push_back(army2Tank);
 
 	}
 	for (int y = 0; y < 12; y++) for (int x = 0; x < 12; x++) // backup
 	{
 		Tank* army1Tank = new Tank( tank1, make_int2( 40 + x * 32, 2620 - y * 32 ), make_int2( 5000, -500 ), 0, 0, id++ );
 		Tank* army2Tank = new Tank( tank2, make_int2( 3900 - x * 32, y * 32 + 300 ), make_int2( -1000, 4000 ), 10, 1, id++);
-		tankPool.push_back(army1Tank);
-		tankPool.push_back(army2Tank);
+		actorPool.push_back(army1Tank);
+		actorPool.push_back(army2Tank);
 
 	}
 	for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) // small forward groups
 	{
 		Tank* army1Tank = new Tank( tank1, make_int2( 1440 + x * 32, 2220 - y * 32 ), make_int2( 3500, -500 ), 0, 0, id++);
 		Tank* army2Tank = new Tank( tank2, make_int2( 2400 - x * 32, y * 32 + 900 ), make_int2( 1300, 4000 ), 128, 1, id++ );
-		tankPool.push_back(army1Tank);
-		tankPool.push_back(army2Tank);
+		actorPool.push_back(army1Tank);
+		actorPool.push_back(army2Tank);
 	}
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
@@ -68,11 +68,13 @@ void MyApp::Init()
 		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d ) );
 	}
 	// place flags
+	/*
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
+	*/
 	// initialize map view
 	map.UpdateView( screen, zoom );
 
@@ -156,19 +158,22 @@ void MyApp::HandleInput()
 void MyApp::Tick( float deltaTime )
 {
 	Timer t;
+	int tanks = 0;
 	// draw the map
 	map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();
 	grid.Populate( actorPool );
-	grid.Populate(tankPool);
 	// update and render actors
 	pointer->Remove();
 	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
+	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	{
+		if (actorPool[i]->GetType() == Actor::TANK)
+			tanks++;
+	}
 
-	//for (int s = (int)tankPool.size(), i = s - 1; i >= 0; i--) tankPool[i]->Remove();
-	remove_kernel->Run2D(int2(36 * 36, tankPool.size()), int2(36, 1));
+	remove_kernel->Run2D(int2(36 * 36, actorPool.size()), int2(36, 1));
 
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
@@ -182,31 +187,18 @@ void MyApp::Tick( float deltaTime )
 		i--;
 	}
 
-	for (int i = 0; i < (int)tankPool.size(); i++) if (!tankPool[i]->Tick())
-	{
-		// actor got deleted, replace by last in list
-		Tank* lastActor = tankPool.back();
-		Tank* toDelete = tankPool[i];
-		tankPool.pop_back();
-		if (lastActor != toDelete) tankPool[i] = lastActor;
-		delete toDelete;
-		i--;
-	}
 	coolDown++;
 	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
 	{
-		//actorPool[i]->Draw();
-	}
-	for (int s = (int)tankPool.size(), i = 0; i < s; i++)
-	{
-		//tankPool[i]->Draw();
+		if(!actorPool[i]->GetType() == Actor::TANK)
+			actorPool[i]->Draw();
 	}
 	tankPosBuffer ->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
-	saveLastPos_kernel->Run(tankPool.size());
-	backup_kernel->Run2D(int2(36 * 36, tankPool.size()), int2(36, 1));
+	saveLastPos_kernel->Run(tanks);
+	backup_kernel->Run2D(int2(36 * 36,tanks), int2(36, 1));
 
-	render_kernel->Run2D(int2(35 * 35, tankPool.size()), int2(35, 1));
+	render_kernel->Run2D(int2(35 * 35,tanks), int2(35, 1));
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
 
 	deviceBuffer->CopyFromDevice(true);
