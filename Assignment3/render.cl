@@ -94,7 +94,7 @@ __kernel void saveLastPos( __global float2* pos, __global int2* lastPos, __globa
 	lastTarget[x] = 1;
 }
 
-__kernel void backup(__global uint* buffer, __global uint* backup, __global int2* lastPos, int sprite_frameSize, __global int* ZBuffer, __global int* backupZBuffer)
+__kernel void backup(__global uint* buffer, __global uint* backup, __global int2* lastPos, int sprite_frameSize, __global uint* ZBuffer, __global uint* backupZBuffer)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);   
@@ -102,10 +102,10 @@ __kernel void backup(__global uint* buffer, __global uint* backup, __global int2
     int v = x / (sprite_frameSize);
     int u = x % (sprite_frameSize);
 
-    int z = atomic_add(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
+    uint z = atomic_add(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
     while (true) {
         backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = atomic_add(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
-        int newz = atomic_cmpxchg(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, z, z + 1);
+        uint newz = atomic_cmpxchg(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, z, z + 1);
         if (newz == z) 
         { 
             backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = z;
@@ -116,7 +116,7 @@ __kernel void backup(__global uint* buffer, __global uint* backup, __global int2
     //backup[v * sprite_frameSize + u + y * sprite_frameSize* sprite_frameSize] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
 }
 
-__kernel void remove(__global uint* buffer, __global uint* backup, __global int2* lastPos, __global int* lastTarget, int sprite_frameSize, __global int* ZBuffer, __global int* backupZBuffer)
+__kernel void remove(__global uint* buffer, __global uint* backup, __global int2* lastPos, __global int* lastTarget, int sprite_frameSize, __global uint* ZBuffer, __global uint* backupZBuffer)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);

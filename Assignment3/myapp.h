@@ -49,7 +49,7 @@ public:
 	static inline Buffer* tankFrameBuffer;
 	static inline Buffer* tankSpriteBuffer;
 
-	static inline Buffer* tankZBuffer;
+	static inline Buffer* mapZBuffer;
 	static inline Buffer* tankBackupZBuffer;
 
 	static inline bool* tankSprite;
@@ -75,6 +75,7 @@ public:
 	static inline Buffer* bushPosBuffer[3];
 	static inline Buffer* bushLastPosBuffer[3];
 	static inline Buffer* bushBackUpBuffer[3];
+	static inline Buffer* bushBackUpZBuffer[3];
 	static inline Buffer* bushLastTargetBuffer[3];
 
 	static inline Buffer* bushFrameBuffer[3];

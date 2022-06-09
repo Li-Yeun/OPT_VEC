@@ -115,7 +115,7 @@ void MyApp::Init()
 
 		tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
 		tankLastPosBuffer = new Buffer(totalTanks * 2);
-		tankZBuffer = new Buffer(map.width * map.height);
+		mapZBuffer = new Buffer(map.width * map.height);
 		tankBackupZBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 		tankBackUpBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 		tankLastTargetBuffer = new Buffer(totalTanks, 0, tankLastTarget);
@@ -151,7 +151,7 @@ void MyApp::Init()
 		backup_kernel->SetArgument(1, tankBackUpBuffer);
 		backup_kernel->SetArgument(2, tankLastPosBuffer);
 		backup_kernel->SetArgument(3, tank1->frameSize);
-		backup_kernel->SetArgument(4, tankZBuffer);
+		backup_kernel->SetArgument(4, mapZBuffer);
 		backup_kernel->SetArgument(5, tankBackupZBuffer);
 
 		remove_kernel = new Kernel("render.cl", "remove");
@@ -160,7 +160,7 @@ void MyApp::Init()
 		remove_kernel->SetArgument(2, tankLastPosBuffer);
 		remove_kernel->SetArgument(3, tankLastTargetBuffer);
 		remove_kernel->SetArgument(4, tank1->frameSize);
-		remove_kernel->SetArgument(5, tankZBuffer);
+		remove_kernel->SetArgument(5, mapZBuffer);
 		remove_kernel->SetArgument(6, tankBackupZBuffer);
 
 		track_kernel = new Kernel("render.cl", "trackrender");
@@ -181,6 +181,7 @@ void MyApp::Init()
 		bushPosBuffer[i] = new Buffer(bushCount[i] * 2, 0, bushPos[i]);
 		bushLastPosBuffer[i] = new Buffer(bushCount[i] * 2);
 		bushBackUpBuffer[i] = new Buffer(bushCount[i] * sqr(bush[i]->frameSize + 1));
+		bushBackUpZBuffer[i] = new Buffer(bushCount[i] * sqr(bush[i]->frameSize + 1));
 		bushLastTargetBuffer[i] = new Buffer(bushCount[i], 0, bushLastTarget[i]);
 
 		bushFrameBuffer[i] = new Buffer(bushCount[i], 0, bushFrame[i]);
@@ -207,6 +208,8 @@ void MyApp::Init()
 		bushBackup_kernel[i]->SetArgument(1, bushBackUpBuffer[i]);
 		bushBackup_kernel[i]->SetArgument(2, bushLastPosBuffer[i]);
 		bushBackup_kernel[i]->SetArgument(3, bush[i]->frameSize);
+		bushBackup_kernel[i]->SetArgument(4, mapZBuffer);
+		bushBackup_kernel[i]->SetArgument(5, bushBackUpZBuffer[i]);
 
 		bushRemove_kernel[i] = new Kernel("render.cl", "remove");
 		bushRemove_kernel[i]->SetArgument(0, deviceBuffer);
@@ -214,6 +217,8 @@ void MyApp::Init()
 		bushRemove_kernel[i]->SetArgument(2, bushLastPosBuffer[i]);
 		bushRemove_kernel[i]->SetArgument(3, bushLastTargetBuffer[i]);
 		bushRemove_kernel[i]->SetArgument(4, bush[i]->frameSize);
+		bushRemove_kernel[i]->SetArgument(5, mapZBuffer);
+		bushRemove_kernel[i]->SetArgument(6, bushBackUpZBuffer[i]);
 	}
 }
 
@@ -262,23 +267,24 @@ void MyApp::Tick( float deltaTime )
 {
 	int tanks = 0;
 	Timer t;
-	// draw the map
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
-	{
-		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Remove();
-	}
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		if(actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Draw();
-	}
+
 	map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();
 	grid.Populate( actorPool );
 	// update and render actors
 	pointer->Remove();
+	// Remove Particles
+	for (int i = 0; i < 3; i++)
+	{
+		int frameSize = bush[i]->frameSize;
+		bushRemove_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
+	}
+	// Remove Tanks
+	{
+		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	}
+
 
 	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
@@ -295,16 +301,7 @@ void MyApp::Tick( float deltaTime )
 	//}
 	//deviceBuffer->CopyToDevice(true);
 
-	// Remove Particles
-	for (int i = 0; i < 3; i++)
-	{
-		int frameSize = bush[i]->frameSize;
-		bushRemove_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
-	}
-	// Remove Tanks
-	{
-		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
-	}
+
 
 	// Perform Ticks
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
@@ -327,6 +324,8 @@ void MyApp::Tick( float deltaTime )
 			i--;
 		}
 	}
+
+
 	for (int i = 0; i < 3; i++)
 	{
 		bushPosBuffer[i]->CopyToDevice(true);
@@ -363,6 +362,19 @@ void MyApp::Tick( float deltaTime )
 		render_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
 	}
 
+	deviceBuffer->CopyFromDevice(true);
+	// draw the map
+	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	{
+		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Remove();
+	}
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		if (actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Draw();
+	}
+
 	int2 cursorPos = map.ScreenToMap( mousePos );
 	//pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
@@ -371,5 +383,5 @@ void MyApp::Tick( float deltaTime )
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
 	printf( "frame time: %5.2fms\n", frameTimeAvg );
-	deviceBuffer->CopyFromDevice(true);
+	
 }
