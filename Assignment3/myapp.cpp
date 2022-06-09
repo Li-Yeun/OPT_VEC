@@ -272,6 +272,12 @@ void MyApp::Tick( float deltaTime )
 	int tanks = 0;
 	Timer t;
 
+	map.Draw(screen);
+	// rebuild actor grid
+	grid.Clear();
+	grid.Populate(actorPool);
+	// update and render actors
+	pointer->Remove();
 	// Remove Particles
 	for (int i = 0; i < 3; i++)
 	{
@@ -305,24 +311,6 @@ void MyApp::Tick( float deltaTime )
 		}
 	}
 
-	// draw the map
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
-	{
-		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Remove();
-	}
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		if (actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Draw();
-	}
-
-	map.Draw(screen);
-	// rebuild actor grid
-	grid.Clear();
-	grid.Populate(actorPool);
-	// update and render actors
-	pointer->Remove();
 
 
 	for (int i = 0; i < 3; i++)
@@ -362,16 +350,27 @@ void MyApp::Tick( float deltaTime )
 	}
 
 
-	
+
+	deviceBuffer->CopyFromDevice();
+	int2 cursorPos = map.ScreenToMap(mousePos);
+	// draw the map
+	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	{
+		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Remove();
+	}
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		if (actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Draw();
+	}
+	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 	// handle mouse
 	HandleInput();
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	printf( "frame time: %5.2fms\n", frameTimeAvg );
-	deviceBuffer->CopyFromDevice();
-	int2 cursorPos = map.ScreenToMap(mousePos);
-	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
+	printf("frame time: %5.2fms\n", frameTimeAvg);
 
 	
 }
