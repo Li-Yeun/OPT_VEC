@@ -149,10 +149,11 @@ void MyApp::Init()
 		backup_kernel = new Kernel("render.cl", "backup");
 		backup_kernel->SetArgument(0, deviceBuffer);
 		backup_kernel->SetArgument(1, tankBackUpBuffer);
-		backup_kernel->SetArgument(2, tankLastPosBuffer);
-		backup_kernel->SetArgument(3, tank1->frameSize);
-		backup_kernel->SetArgument(4, mapZBuffer);
-		backup_kernel->SetArgument(5, tankBackupZBuffer);
+		backup_kernel->SetArgument(2, tankLastTargetBuffer);
+		backup_kernel->SetArgument(3, tankLastPosBuffer);
+		backup_kernel->SetArgument(4, tank1->frameSize);
+		backup_kernel->SetArgument(5, mapZBuffer);
+		backup_kernel->SetArgument(6, tankBackupZBuffer);
 
 		remove_kernel = new Kernel("render.cl", "remove");
 		remove_kernel->SetArgument(0, deviceBuffer);
@@ -168,6 +169,7 @@ void MyApp::Init()
 		track_kernel->SetArgument(1, tankTrackPosBuffer);
 		track_kernel->SetArgument(2, tankSteerBuffer);
 		track_kernel->SetArgument(3, tankDirBuffer);
+		track_kernel->SetArgument(4, tankLastTargetBuffer);
 
 
 	}
@@ -206,10 +208,11 @@ void MyApp::Init()
 		bushBackup_kernel[i] = new Kernel("render.cl", "backup");
 		bushBackup_kernel[i]->SetArgument(0, deviceBuffer);
 		bushBackup_kernel[i]->SetArgument(1, bushBackUpBuffer[i]);
-		bushBackup_kernel[i]->SetArgument(2, bushLastPosBuffer[i]);
-		bushBackup_kernel[i]->SetArgument(3, bush[i]->frameSize);
-		bushBackup_kernel[i]->SetArgument(4, mapZBuffer);
-		bushBackup_kernel[i]->SetArgument(5, bushBackUpZBuffer[i]);
+		bushBackup_kernel[i]->SetArgument(2, bushLastTargetBuffer[i]);
+		bushBackup_kernel[i]->SetArgument(3, bushLastPosBuffer[i]);
+		bushBackup_kernel[i]->SetArgument(4, bush[i]->frameSize);
+		bushBackup_kernel[i]->SetArgument(5, mapZBuffer);
+		bushBackup_kernel[i]->SetArgument(6, bushBackUpZBuffer[i]);
 
 		bushRemove_kernel[i] = new Kernel("render.cl", "remove");
 		bushRemove_kernel[i]->SetArgument(0, deviceBuffer);

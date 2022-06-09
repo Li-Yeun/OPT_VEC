@@ -94,10 +94,12 @@ __kernel void saveLastPos( __global float2* pos, __global int2* lastPos, __globa
 	lastTarget[x] = 1;
 }
 
-__kernel void backup(__global uint* buffer, __global uint* backup, __global int2* lastPos, int sprite_frameSize, __global uint* ZBuffer, __global uint* backupZBuffer)
+__kernel void backup(__global uint* buffer, __global uint* backup, __global int* lastTarget, __global int2* lastPos, int sprite_frameSize, __global uint* ZBuffer, __global uint* backupZBuffer)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);   
+    
+    if (!lastTarget[y]) return;
 
     int v = x / (sprite_frameSize);
     int u = x % (sprite_frameSize);
@@ -188,9 +190,10 @@ __kernel void bushrender(__global uint* buffer, __global uint* sprite, __global 
         else oldpixel = newoldpixel;
     }
 }
-__kernel void trackrender(__global uint* buffer, __global float2* pos, __global float* steer, __global float2* dir)
+__kernel void trackrender(__global uint* buffer, __global float2* pos, __global float* steer, __global float2* dir, __global int* lastTarget)
 {   
     int x = get_global_id(0);
+    if (!lastTarget[x]) return;
 	if(steer[x] >= -0.2f && steer[x] <= 0.2f)
     {
 		// draw tank tracks, only when not turning
