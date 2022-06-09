@@ -160,6 +160,8 @@ void MyApp::Init()
 		remove_kernel->SetArgument(2, tankLastPosBuffer);
 		remove_kernel->SetArgument(3, tankLastTargetBuffer);
 		remove_kernel->SetArgument(4, tank1->frameSize);
+		remove_kernel->SetArgument(5, tankZBuffer);
+		remove_kernel->SetArgument(6, tankBackupZBuffer);
 
 		track_kernel = new Kernel("render.cl", "trackrender");
 		track_kernel->SetArgument(0, deviceBuffer);
@@ -167,8 +169,7 @@ void MyApp::Init()
 		track_kernel->SetArgument(2, tankSteerBuffer);
 		track_kernel->SetArgument(3, tankDirBuffer);
 
-		remove_kernel->SetArgument(5, tankZBuffer);
-		remove_kernel->SetArgument(6, tankBackupZBuffer);
+
 	}
 	// bushes
 	for(int i = 0; i < 3; i++)
