@@ -136,9 +136,9 @@ void MyApp::Init()
 		render_kernel->SetArgument(5, tank1->frameCount);
 		render_kernel->SetArgument(6, tankSpriteBuffer);
 
-		deviceBuffer->CopyToDevice(true);
-		spriteBuffer->CopyToDevice(true);
-		tankSpriteBuffer->CopyToDevice(true);
+		deviceBuffer->CopyToDevice();
+		spriteBuffer->CopyToDevice();
+		tankSpriteBuffer->CopyToDevice();
 
 		saveLastPos_kernel = new Kernel("render.cl", "saveLastPos");
 		saveLastPos_kernel->SetArgument(0, tankPosBuffer);
@@ -197,7 +197,7 @@ void MyApp::Init()
 
 
 		//deviceBuffer->CopyToDevice(true);
-		bushSpriteBuffer[i]->CopyToDevice(true);
+		bushSpriteBuffer[i]->CopyToDevice();
 
 		bushSaveLastPos_kernel[i] = new Kernel("render.cl", "saveLastPos");
 		bushSaveLastPos_kernel[i]->SetArgument(0, bushPosBuffer[i]);
@@ -268,15 +268,10 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
+
 	int tanks = 0;
 	Timer t;
 
-	map.Draw( screen );
-	// rebuild actor grid
-	grid.Clear();
-	grid.Populate( actorPool );
-	// update and render actors
-	pointer->Remove();
 	// Remove Particles
 	for (int i = 0; i < 3; i++)
 	{
@@ -287,24 +282,6 @@ void MyApp::Tick( float deltaTime )
 	{
 		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
 	}
-
-
-	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
-	{
-	//	if (!actorPool[i]->GetType() == Actor::TANK)
-	//		actorPool[i]->Remove();
-	}
-
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
-	//for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	//{
-	//	if(!actorPool[i]->GetType() == Actor::TANK)
-	//		actorPool[i]->Draw();
-	//}
-	//deviceBuffer->CopyToDevice(true);
-
-
 
 	// Perform Ticks
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
@@ -327,6 +304,25 @@ void MyApp::Tick( float deltaTime )
 			i--;
 		}
 	}
+
+	// draw the map
+	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	{
+		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Remove();
+	}
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		if (actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Draw();
+	}
+
+	map.Draw(screen);
+	// rebuild actor grid
+	grid.Clear();
+	grid.Populate(actorPool);
+	// update and render actors
+	pointer->Remove();
 
 
 	for (int i = 0; i < 3; i++)
@@ -366,8 +362,7 @@ void MyApp::Tick( float deltaTime )
 	}
 
 
-	int2 cursorPos = map.ScreenToMap( mousePos );
-	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
+	
 	// handle mouse
 	HandleInput();
 	// report frame time
@@ -375,16 +370,8 @@ void MyApp::Tick( float deltaTime )
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
 	printf( "frame time: %5.2fms\n", frameTimeAvg );
 	deviceBuffer->CopyFromDevice();
-	// draw the map
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
-	{
-		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Remove();
-	}
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
-	{
-		if (actorPool[i]->GetType() != Actor::TANK)
-			actorPool[i]->Draw();
-	}
+	int2 cursorPos = map.ScreenToMap(mousePos);
+	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
+
 	
 }

@@ -98,9 +98,9 @@ bool Tank::Tick()
 	else if (steer > 0.2f) frame = (frame + 1) & 255, dir = directions[frame], speed = 0.35f;
 	else {
 		// draw tank tracks, only when not turning
-		float2 perp( -dir.y, dir.x );
-		float2 trackPos1 = pos - 9 * dir + 4.5f * perp;
-		float2 trackPos2 = pos - 9 * dir - 5.5f * perp;
+		//float2 perp( -dir.y, dir.x );
+		//float2 trackPos1 = pos - 9 * dir + 4.5f * perp;
+		//float2 trackPos2 = pos - 9 * dir - 5.5f * perp;
 		//MyApp::map.bitmap->BlendBilerp( trackPos1.x, trackPos1.y, 0, 12 );
 		//MyApp::map.bitmap->BlendBilerp( trackPos2.x, trackPos2.y, 0, 12 );
 	}
