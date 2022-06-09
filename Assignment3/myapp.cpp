@@ -94,13 +94,13 @@ void MyApp::Init()
 		sand.push_back( new Particle( bush[i % 3], make_int2( x, y ), map.bitmap->pixels[x + y * map.bitmap->width], d , i/3, i%3));
 	}
 	// place flags
-	/*
+	
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
-	*/
+	
 	// initialize map view
 	map.UpdateView( screen, zoom );
 
@@ -243,6 +243,16 @@ void MyApp::Tick( float deltaTime )
 	int tanks = 0;
 	Timer t;
 	// draw the map
+	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
+	{
+		if (!actorPool[i] && actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Remove();
+	}
+	for (int s = (int)actorPool.size(), i = 0; i < s; i++)
+	{
+		if(actorPool[i]->GetType() != Actor::TANK)
+			actorPool[i]->Draw();
+	}
 	map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();

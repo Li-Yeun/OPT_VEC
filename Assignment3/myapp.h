@@ -74,6 +74,26 @@ public:
 
 	static inline int bushCount[3];
 
+	//Flags
+	static inline Kernel* flagRender_kernel;
+	static inline Kernel* flagRemove_kernel;
+	static inline Kernel* flagSaveLastPos_kernel;
+	static inline Kernel* flagBackup_kernel;
+
+	static inline Buffer* flagSpriteBuffer;
+	static inline Buffer* flagPosBuffer;
+	static inline Buffer* flagLastPosBuffer;
+	static inline Buffer* flagBackUpBuffer;
+	static inline Buffer* flagLastTargetBuffer;
+
+	static inline Buffer* flagFrameBuffer;
+
+	static inline float2* flagPos;
+	static inline int* flagFrame;
+	static inline int* flagLastTarget;
+
+	static inline int flagCount;
+
 };
 
 } // namespace Tmpl8
