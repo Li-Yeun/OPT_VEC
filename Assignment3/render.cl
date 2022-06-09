@@ -35,7 +35,7 @@ __kernel void render(__global uint* buffer, __global uint* sprite, __global floa
 	uint src = frame[y] * sprite_frameSize + v * stride + u;
 	//for (int v = 0; v < SPRITE_FRAMESIZE - 1; v++)
 	//for (int u = 0; u < SPRITE_FRAMESIZE - 1; u++)
-    uint p0 = ScaleColor( sprite[src + + offset], w0 );
+    uint p0 = ScaleColor( sprite[src + offset], w0 );
     uint p1 = ScaleColor( sprite[src + 1 + offset], w1 );
     uint p2 = ScaleColor( sprite[src + stride + offset], w2 );
     uint p3 = ScaleColor( sprite[src + stride + 1 + offset], w3 );
@@ -90,4 +90,45 @@ __kernel void remove(__global uint* buffer, __global uint* backup, __global int2
     int u = x % (sprite_frameSize);
 
     buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backup[v * sprite_frameSize + u +  y *  (sprite_frameSize + 1 )* (sprite_frameSize + 1)];
+}
+
+
+__kernel void render2(__global uint* buffer, __global uint* sprite, __global float2* pos, __global int* frame, int sprite_frameSize, int sprite_frameCount)
+{
+    int x = get_global_id(0);
+    int v = x / (sprite_frameSize - 1);
+    int u = x % (sprite_frameSize - 1);
+    int y = get_global_id(1);
+
+	// calculate bilinear weights - these are constant in this case.
+    int x1 = pos[y].x - sprite_frameSize / 2, x2 = x1 + sprite_frameSize;
+	int y1 = pos[y].y - sprite_frameSize / 2, y2 = y1 + sprite_frameSize;
+
+	uint frac_x = (int)(255.0f * (pos[y].x - (int)( pos[y].x )));
+	uint frac_y = (int)(255.0f * (pos[y].y - (int)( pos[y].y )));
+	uint w0 = (frac_x * frac_y) >> 8;
+	uint w1 = ((255 - frac_x) * frac_y) >> 8;
+	uint w2 = (frac_x * (255 - frac_y)) >> 8;
+	uint w3 = ((255 - frac_x) * (255 - frac_y)) >> 8;
+	// draw the sprite frame
+	uint stride = sprite_frameCount * sprite_frameSize;
+	uint dst = x1 + (y1 + v) * MAP_WIDTH + u;
+	uint src = frame[y] * sprite_frameSize + v * stride + u;
+	//for (int v = 0; v < SPRITE_FRAMESIZE - 1; v++)
+	//for (int u = 0; u < SPRITE_FRAMESIZE - 1; u++)
+    uint p0 = ScaleColor( sprite[src], w0 );
+    uint p1 = ScaleColor( sprite[src + 1], w1 );
+    uint p2 = ScaleColor( sprite[src + stride], w2 );
+    uint p3 = ScaleColor( sprite[src + stride + 1], w3 );
+    uint pix = p0 + p1 + p2 + p3;
+    uint alpha = pix >> 24;
+
+    // Get old pixel from a nonsense automic operation
+    uint oldpixel = atomic_add(buffer + dst, 0);
+    // Keep trying to write to the buffer until the buffer held the same pixel you read before.
+    while (true) {
+        uint newoldpixel = atomic_cmpxchg(buffer + dst, oldpixel, ScaleColor(pix, alpha) + ScaleColor(oldpixel, 255 - alpha));
+        if (newoldpixel == oldpixel) break;
+        else oldpixel = newoldpixel;
+    }
 }

@@ -260,13 +260,19 @@ SpriteExplosion::SpriteExplosion( Bullet* bullet )
 }
 
 // Particle constructor
-Particle::Particle( Sprite* s, int2 p, uint c, uint d )
+Particle::Particle( Sprite* s, int2 p, uint c, uint d, uint i, uint g)
 {
 	pos = make_float2( p );
 	dir = make_float2( -1 - RandomFloat() * 4, 0 );
 	color = c;
 	frameChange = d;
 	sprite = SpriteInstance( s );
+	id = i;
+	group = g;
+	MyApp::bushPos[group][id] = pos;
+	MyApp::bushFrame[group][id] = frame;
+	MyApp::bushLastTarget[group][id] = 0;
+
 }
 
 // Particle behaviour
@@ -289,4 +295,7 @@ void Particle::Tick()
 	}
 	dir.y += RandomFloat() * 0.05f - 0.025f;
 	frame = (frame + frameChange + 256) & 255;
+
+	MyApp::bushPos[group][id] = pos;
+	MyApp::bushFrame[group][id] = frame;
 }

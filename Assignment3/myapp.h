@@ -32,25 +32,48 @@ public:
 	static inline vector<Particle*> sand;		// sand particles
 	static inline Grid grid;					// actor grid for faster range queries
 	static inline int coolDown = 0;				// used to prevent simultaneous firing
+	static inline Buffer* deviceBuffer;
+
+	// Tanks
 	static inline Kernel* render_kernel;
 	static inline Kernel* remove_kernel;
 	static inline Kernel* saveLastPos_kernel;
 	static inline Kernel* backup_kernel;
-	static inline Buffer* deviceBuffer;
-	static inline Buffer* spriteBuffer;
 
+	static inline Buffer* spriteBuffer;
 	static inline Buffer* tankPosBuffer;
 	static inline Buffer* tankLastPosBuffer;
 	static inline Buffer* tankBackUpBuffer;
 	static inline Buffer* tankLastTargetBuffer;
 
 	static inline Buffer* tankFrameBuffer;
-
 	static inline Buffer* tankSpriteBuffer;
+
 	static inline bool* tankSprite;
 	static inline float2* tankPos;
 	static inline int* tankFrame;
 	static inline int* tankLastTarget;
+
+	//Bushes
+	static inline Kernel* bushRender_kernel[3];
+	static inline Kernel* bushRemove_kernel[3];
+	static inline Kernel* bushSaveLastPos_kernel[3];
+	static inline Kernel* bushBackup_kernel[3];
+
+	static inline Buffer* bushSpriteBuffer[3];
+	static inline Buffer* bushPosBuffer[3];
+	static inline Buffer* bushLastPosBuffer[3];
+	static inline Buffer* bushBackUpBuffer[3];
+	static inline Buffer* bushLastTargetBuffer[3];
+
+	static inline Buffer* bushFrameBuffer[3];
+
+	static inline float2* bushPos[3];
+	static inline int* bushFrame[3];
+	static inline int* bushLastTarget[3];
+
+	static inline int bushCount[3];
+
 };
 
 } // namespace Tmpl8
