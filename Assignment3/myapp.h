@@ -49,6 +49,9 @@ public:
 	static inline Buffer* tankFrameBuffer;
 	static inline Buffer* tankSpriteBuffer;
 
+	static inline Buffer* tankZBuffer;
+	static inline Buffer* tankBackupZBuffer;
+
 	static inline bool* tankSprite;
 	static inline float2* tankPos;
 	static inline int* tankFrame;

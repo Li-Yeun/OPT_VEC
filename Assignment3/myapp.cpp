@@ -112,6 +112,8 @@ void MyApp::Init()
 
 		tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
 		tankLastPosBuffer = new Buffer(totalTanks * 2);
+		tankZBuffer = new Buffer(map.width * map.height);
+		tankBackupZBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 		tankBackUpBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 		tankLastTargetBuffer = new Buffer(totalTanks, 0, tankLastTarget);
 
@@ -143,6 +145,8 @@ void MyApp::Init()
 		backup_kernel->SetArgument(1, tankBackUpBuffer);
 		backup_kernel->SetArgument(2, tankLastPosBuffer);
 		backup_kernel->SetArgument(3, tank1->frameSize);
+		backup_kernel->SetArgument(4, tankZBuffer);
+		backup_kernel->SetArgument(5, tankBackupZBuffer);
 
 		remove_kernel = new Kernel("render.cl", "remove");
 		remove_kernel->SetArgument(0, deviceBuffer);
@@ -150,6 +154,8 @@ void MyApp::Init()
 		remove_kernel->SetArgument(2, tankLastPosBuffer);
 		remove_kernel->SetArgument(3, tankLastTargetBuffer);
 		remove_kernel->SetArgument(4, tank1->frameSize);
+		remove_kernel->SetArgument(5, tankZBuffer);
+		remove_kernel->SetArgument(6, tankBackupZBuffer);
 	}
 	// bushes
 	for(int i = 0; i < 3; i++)
@@ -275,20 +281,20 @@ void MyApp::Tick( float deltaTime )
 	//}
 	//deviceBuffer->CopyToDevice(true);
 
-	// Remove Particles
-	for (int i = 0; i < 3; i++)
-	{
-		int frameSize = bush[i]->frameSize;
-		bushRemove_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
-		clFinish(bushRemove_kernel[i]->GetQueue());
-	}
-	// Remove Tanks
-	{
-		tankPosBuffer->CopyToDevice(true);
-		tankFrameBuffer->CopyToDevice(true);
-		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
-		clFinish(remove_kernel->GetQueue());
-	}
+	//// Remove Particles
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	int frameSize = bush[i]->frameSize;
+	//	bushRemove_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
+	//	clFinish(bushRemove_kernel[i]->GetQueue());
+	//}
+	//// Remove Tanks
+	//{
+	//	tankPosBuffer->CopyToDevice(true);
+	//	tankFrameBuffer->CopyToDevice(true);
+	//	remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
+	//	clFinish(remove_kernel->GetQueue());
+	//}
 
 	// Perform Ticks
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
