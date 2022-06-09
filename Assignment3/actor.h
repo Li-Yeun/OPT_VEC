@@ -18,6 +18,7 @@ public:
 	float2 pos, dir;
 	int frame;
 	static inline float2* directions = 0;
+	int id;
 };
 
 class Tank : public Actor
@@ -29,7 +30,6 @@ public:
 	float2 target;
 	int army, coolDown = 0;
 	bool hitByBullet = false;
-	int id;
 };
 
 class Bullet : public Actor

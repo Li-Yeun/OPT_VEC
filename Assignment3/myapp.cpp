@@ -250,12 +250,6 @@ void MyApp::Tick( float deltaTime )
 	// update and render actors
 	pointer->Remove();
 
-	for (int i = 0; i < (int)actorPool.size(); i++)
-	{
-		if (actorPool[i]->GetType() == Actor::TANK)
-			tanks++;
-	}
-
 	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
 	{
@@ -282,7 +276,7 @@ void MyApp::Tick( float deltaTime )
 	{
 		tankPosBuffer->CopyToDevice(true);
 		tankFrameBuffer->CopyToDevice(true);
-		remove_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
+		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
 		clFinish(remove_kernel->GetQueue());
 	}
 
@@ -298,9 +292,13 @@ void MyApp::Tick( float deltaTime )
 			Actor* toDelete = actorPool[i];
 			actorPool.pop_back();
 			if (lastActor != toDelete) actorPool[i] = lastActor;
+			if (actorPool[i]->GetType() == Actor::TANK)
+			{
+				//tankLastTarget[toDelete->id] = 0;
+				//tankLastTargetBuffer->CopyToDevice(true);
+			}
 			delete toDelete;
 			i--;
-			tanks--;
 		}
 	}
 	for (int i = 0; i < 3; i++)
@@ -327,10 +325,10 @@ void MyApp::Tick( float deltaTime )
 	}
 	// Draw Tanks
 	{
-		saveLastPos_kernel->Run(tanks);
-		backup_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
+		saveLastPos_kernel->Run(totalTanks);
+		backup_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
 
-		render_kernel->Run2D(int2(35 * 35, tanks), int2(35, 1));
+		render_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
 		clFinish(render_kernel->GetQueue());
 	}
 
