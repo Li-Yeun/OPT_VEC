@@ -9,6 +9,28 @@ inline uint ScaleColor( const uint c, const uint scale )
 	const uint ag = (((c & 0xff00ff00) >> 8) * scale) & 0xff00ff00;
 	return rb + ag;
 }
+inline void Blend(__global uint* buffer, int x, int y, uint c, uint w )
+{
+	if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) return;
+	buffer[x + y * MAP_WIDTH] = ScaleColor( c, w ) + ScaleColor( buffer[x + y * MAP_WIDTH], 255 - w );
+}
+
+inline void BlendBilerp(__global uint* buffer, float x, float y, uint c, uint w )
+{
+	int2 intPos = (int2) ( (int)x, (int)y );
+	float frac_x = x - intPos.x;
+	float frac_y = y - intPos.y;
+	int w1 = (int)(256 * ((1 - frac_x) * (1 - frac_y)));
+	int w2 = (int)(256 * (frac_x * (1 - frac_y)));
+	int w3 = (int)(256 * ((1 - frac_x) * frac_y));
+	int w4 = (int)(256 * (frac_x * frac_y));
+	Blend(buffer, intPos.x, intPos.y, c, (w1 * w) >> 8 );
+	Blend(buffer, intPos.x + 1, intPos.y, c, (w2 * w) >> 8 );
+	Blend(buffer, intPos.x, intPos.y + 1, c, (w3 * w) >> 8 );
+	Blend(buffer, intPos.x + 1, intPos.y + 1, c, (w4 * w) >> 8 );
+    
+}
+
 __kernel void render(__global uint* buffer, __global uint* sprite, __global float2* pos, __global int* frame, int sprite_frameSize, int sprite_frameCount, __constant bool* tank_sprite)
 {
     int x = get_global_id(0);
@@ -165,4 +187,18 @@ __kernel void bushrender(__global uint* buffer, __global uint* sprite, __global 
         if (newoldpixel == oldpixel) break;
         else oldpixel = newoldpixel;
     }
+}
+__kernel void trackrender(__global uint* buffer, __global float2* pos, __global float* steer, __global float2* dir)
+{   
+    int x = get_global_id(0);
+	if(steer[x] >= -0.2f && steer[x] <= 0.2f)
+    {
+		// draw tank tracks, only when not turning
+		float2 perp = (float2) ( - dir[x].y, dir[x].x );
+        
+		float2 trackPos1 = pos[x] - 9 * dir[x] + 4.5f * perp;
+		float2 trackPos2 = pos[x] - 9 * dir[x] - 5.5f * perp;
+		BlendBilerp(buffer, trackPos1.x, trackPos1.y, 0, 12 );
+		BlendBilerp(buffer, trackPos2.x, trackPos2.y, 0, 12 );
+	}
 }
