@@ -296,11 +296,6 @@ void MyApp::Tick( float deltaTime )
 	}
 	// Remove Tanks
 	{
-		tankPosBuffer->CopyToDevice(true);
-		tankFrameBuffer->CopyToDevice(true);
-		tankDirBuffer->CopyToDevice(true);
-		tankSteerBuffer->CopyToDevice(true);
-		tankTrackPosBuffer->CopyToDevice(true);
 		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
 	}
 
