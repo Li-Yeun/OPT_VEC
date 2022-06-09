@@ -104,17 +104,27 @@ __kernel void backup(__global uint* buffer, __global uint* backup, __global int*
     int v = x / (sprite_frameSize);
     int u = x % (sprite_frameSize);
 
-    uint z = atomic_add(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
-    while (true) {
-        backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = atomic_add(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
-        uint newz = atomic_cmpxchg(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, z, z + 1);
-        if (newz == z) 
-        { 
-            backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = z;
-            break; 
+    if (ZBuffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] == 0) {
+        int old = atomic_add(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 1);
+        if (old == 0) 
+        {
+            backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
+            backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = 0;
         }
-        else z = newz;
+        else backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = 1;
     }
+    else backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = 1;
+    //uint z = atomic_add(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
+    //while (true) {
+    //    backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = atomic_add(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
+    //    uint newz = atomic_cmpxchg(ZBuffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, z, z + 1);
+    //    if (newz == z) 
+    //    { 
+    //        backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] = z;
+    //        break; 
+    //    }
+    //    else z = newz;
+    //}
     //backup[v * sprite_frameSize + u + y * sprite_frameSize* sprite_frameSize] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
 }
 
@@ -132,16 +142,17 @@ __kernel void remove(__global uint* buffer, __global uint* backup, __global int2
 
     // If we are not the sprite that drew first for this pixel, skip
     if (backupZBuffer[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize] != 0) return;
+    buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize];
 
-    // Get old pixel from a nonsense automic operation
-    uint oldpixel = atomic_add(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
-    // Keep trying to write to the buffer until the buffer held the same pixel you read before.
-    while (true) {
-        uint newoldpixel = atomic_cmpxchg(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 
-            oldpixel, backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize]);
-        if (newoldpixel == oldpixel) break;
-        else oldpixel = newoldpixel;
-    }
+    //// Get old pixel from a nonsense automic operation
+    //uint oldpixel = atomic_add(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 0);
+    //// Keep trying to write to the buffer until the buffer held the same pixel you read before.
+    //while (true) {
+    //    uint newoldpixel = atomic_cmpxchg(buffer + lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u, 
+    //        oldpixel, backup[v * sprite_frameSize + u + y * sprite_frameSize * sprite_frameSize]);
+    //    if (newoldpixel == oldpixel) break;
+    //    else oldpixel = newoldpixel;
+    //}
     ZBuffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = 0;
 }
 

@@ -365,7 +365,7 @@ void MyApp::Tick( float deltaTime )
 		render_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
 	}
 
-	deviceBuffer->CopyFromDevice(true);
+	deviceBuffer->CopyFromDevice();
 	// draw the map
 	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--)
 	{
@@ -379,12 +379,13 @@ void MyApp::Tick( float deltaTime )
 	}
 
 	int2 cursorPos = map.ScreenToMap( mousePos );
-	//pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
+	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
 	HandleInput();
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
 	printf( "frame time: %5.2fms\n", frameTimeAvg );
+	
 	
 }
