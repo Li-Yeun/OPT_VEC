@@ -40,9 +40,12 @@ void MyApp::Init()
 	int group1 = 16, group2 = 12, group3 = 8;
 	totalTanks = (group1 * group1 + group2 * group2 + group3 * group3) * 2;
 	tankPos = new float2[totalTanks];
+	tankTrackPos = new float2[totalTanks];
 	tankFrame = new int[totalTanks];
 	tankLastTarget = new int[totalTanks];
 	tankSprite = new bool[totalTanks];
+	tankDir = new float2[totalTanks];
+	tankSteer = new float[totalTanks];
 
 	for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) // main groups
 	{
@@ -119,6 +122,10 @@ void MyApp::Init()
 
 		tankSpriteBuffer = new Buffer(totalTanks / 4, CL_MEM_READ_ONLY, tankSprite);
 
+		tankSteerBuffer = new Buffer(totalTanks, 0, tankSteer);
+		tankDirBuffer = new Buffer(totalTanks * 2, 0, tankDir);
+		tankTrackPosBuffer = new Buffer(totalTanks * 2, 0, tankTrackPos);
+
 		render_kernel->SetArgument(0, deviceBuffer);
 		render_kernel->SetArgument(1, spriteBuffer);
 		render_kernel->SetArgument(2, tankPosBuffer);
@@ -130,7 +137,6 @@ void MyApp::Init()
 		deviceBuffer->CopyToDevice(true);
 		spriteBuffer->CopyToDevice(true);
 		tankSpriteBuffer->CopyToDevice(true);
-
 
 		saveLastPos_kernel = new Kernel("render.cl", "saveLastPos");
 		saveLastPos_kernel->SetArgument(0, tankPosBuffer);
@@ -150,6 +156,13 @@ void MyApp::Init()
 		remove_kernel->SetArgument(2, tankLastPosBuffer);
 		remove_kernel->SetArgument(3, tankLastTargetBuffer);
 		remove_kernel->SetArgument(4, tank1->frameSize);
+
+		track_kernel = new Kernel("render.cl", "trackrender");
+		track_kernel->SetArgument(0, deviceBuffer);
+		track_kernel->SetArgument(1, tankTrackPosBuffer);
+		track_kernel->SetArgument(2, tankSteerBuffer);
+		track_kernel->SetArgument(3, tankDirBuffer);
+
 	}
 	// bushes
 	for(int i = 0; i < 3; i++)
@@ -280,14 +293,15 @@ void MyApp::Tick( float deltaTime )
 	{
 		int frameSize = bush[i]->frameSize;
 		bushRemove_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
-		clFinish(bushRemove_kernel[i]->GetQueue());
 	}
 	// Remove Tanks
 	{
 		tankPosBuffer->CopyToDevice(true);
 		tankFrameBuffer->CopyToDevice(true);
+		tankDirBuffer->CopyToDevice(true);
+		tankSteerBuffer->CopyToDevice(true);
+		tankTrackPosBuffer->CopyToDevice(true);
 		remove_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
-		clFinish(remove_kernel->GetQueue());
 	}
 
 	// Perform Ticks
@@ -319,6 +333,11 @@ void MyApp::Tick( float deltaTime )
 	}
 	tankPosBuffer->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
+	tankDirBuffer->CopyToDevice(true);
+	tankSteerBuffer->CopyToDevice(true);
+	tankTrackPosBuffer->CopyToDevice(true);
+
+
 
 	coolDown++;
 
@@ -335,11 +354,11 @@ void MyApp::Tick( float deltaTime )
 	}
 	// Draw Tanks
 	{
+		track_kernel->Run(totalTanks);
 		saveLastPos_kernel->Run(totalTanks);
 		backup_kernel->Run2D(int2(36 * 36, totalTanks), int2(36, 1));
 
 		render_kernel->Run2D(int2(35 * 35, totalTanks), int2(35, 1));
-		clFinish(render_kernel->GetQueue());
 	}
 
 	int2 cursorPos = map.ScreenToMap( mousePos );

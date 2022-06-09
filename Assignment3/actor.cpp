@@ -23,6 +23,9 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i )
 
 	id = i;
 	MyApp::tankPos[id] = pos;
+	MyApp::tankDir[id] = dir;
+	MyApp::tankSteer[id] = 0;
+	MyApp::tankTrackPos[id] = pos;
 	MyApp::tankFrame[id] = frame;
 	MyApp::tankLastTarget[id] = 0;
 	MyApp::tankSprite[id] = a;
@@ -98,9 +101,13 @@ bool Tank::Tick()
 		float2 perp( -dir.y, dir.x );
 		float2 trackPos1 = pos - 9 * dir + 4.5f * perp;
 		float2 trackPos2 = pos - 9 * dir - 5.5f * perp;
-		MyApp::map.bitmap->BlendBilerp( trackPos1.x, trackPos1.y, 0, 12 );
-		MyApp::map.bitmap->BlendBilerp( trackPos2.x, trackPos2.y, 0, 12 );
+		//MyApp::map.bitmap->BlendBilerp( trackPos1.x, trackPos1.y, 0, 12 );
+		//MyApp::map.bitmap->BlendBilerp( trackPos2.x, trackPos2.y, 0, 12 );
 	}
+	MyApp::tankTrackPos[id] = pos;
+	MyApp::tankDir[id] = dir;
+	MyApp::tankSteer[id] = steer;
+
 	pos += dir * speed * 0.5f;
 
 	MyApp::tankPos[id] = pos;

@@ -54,6 +54,14 @@ public:
 	static inline int* tankFrame;
 	static inline int* tankLastTarget;
 
+	static inline Kernel* track_kernel;
+	static inline Buffer* tankDirBuffer;
+	static inline Buffer* tankSteerBuffer;
+	static inline Buffer* tankTrackPosBuffer;
+	static inline float2* tankDir;
+	static inline float* tankSteer;
+	static inline float2* tankTrackPos;
+
 	//Bushes
 	static inline Kernel* bushRender_kernel[3];
 	static inline Kernel* bushRemove_kernel[3];
