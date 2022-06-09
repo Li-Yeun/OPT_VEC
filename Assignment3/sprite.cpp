@@ -153,7 +153,7 @@ void SpriteInstance::Draw(Surface* target, float2 pos, int frame)
 	uint* tpixels = target->pixels;
 	uint* spixels = sprite->pixels;
 	for (int v = 0; v < frameSize; ++v)
-		memcpy(backup + v * frameSize, tpixels + x1 + (y1 + v) * width, frameSize << 2);
+		memcpy(backup + v * frameSize, tpixels + x1 + (y1 + v) * width, frameSize <<2);
 	lastPos = make_int2(x1, y1);
 	lastTarget = target;
 	// calculate bilinear weights - these are constant in this case.

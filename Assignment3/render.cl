@@ -11,7 +11,6 @@ inline uint ScaleColor( const uint c, const uint scale )
 }
 __kernel void render(__global uint* buffer, __global uint* sprite, __global float2* pos, __global int* frame, int sprite_frameSize, int sprite_frameCount, __constant bool* tank_sprite)
 {
-
     int x = get_global_id(0);
     int v = x / (sprite_frameSize - 1);
     int u = x % (sprite_frameSize - 1);
@@ -22,6 +21,11 @@ __kernel void render(__global uint* buffer, __global uint* sprite, __global floa
 	// calculate bilinear weights - these are constant in this case.
     int x1 = pos[y].x - sprite_frameSize / 2, x2 = x1 + sprite_frameSize;
 	int y1 = pos[y].y - sprite_frameSize / 2, y2 = y1 + sprite_frameSize;
+
+    if (x1 < 0 || y1 < 0 || x2 >= MAP_WIDTH|| y2 >= MAP_HEIGHT)
+	{
+		return;
+	}
 
 	uint frac_x = (int)(255.0f * (pos[y].x - (int)( pos[y].x )));
 	uint frac_y = (int)(255.0f * (pos[y].y - (int)( pos[y].y )));
@@ -76,7 +80,7 @@ __kernel void backup(__global uint* buffer, __global uint* backup, __global int2
     int v = x / (sprite_frameSize);
     int u = x % (sprite_frameSize);
 
-    backup[v * sprite_frameSize + u + y * (sprite_frameSize + 1)* (sprite_frameSize + 1)] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
+    backup[v * sprite_frameSize + u + y * sprite_frameSize* sprite_frameSize] = buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u];
 }
 
 __kernel void remove(__global uint* buffer, __global uint* backup, __global int2* lastPos, __global int* lastTarget, int sprite_frameSize)
@@ -89,11 +93,11 @@ __kernel void remove(__global uint* buffer, __global uint* backup, __global int2
     int v = x / (sprite_frameSize);
     int u = x % (sprite_frameSize);
 
-    buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backup[v * sprite_frameSize + u +  y *  (sprite_frameSize + 1 )* (sprite_frameSize + 1)];
+    buffer[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backup[v * sprite_frameSize + u +  y * sprite_frameSize * sprite_frameSize];
 }
 
 
-__kernel void render2(__global uint* buffer, __global uint* sprite, __global float2* pos, __global int* frame, int sprite_frameSize, int sprite_frameCount)
+__kernel void bushrender(__global uint* buffer, __global uint* sprite, __global float2* pos, __global int* frame, int sprite_frameSize, int sprite_frameCount)
 {
     int x = get_global_id(0);
     int v = x / (sprite_frameSize - 1);
@@ -104,6 +108,11 @@ __kernel void render2(__global uint* buffer, __global uint* sprite, __global flo
     int x1 = pos[y].x - sprite_frameSize / 2, x2 = x1 + sprite_frameSize;
 	int y1 = pos[y].y - sprite_frameSize / 2, y2 = y1 + sprite_frameSize;
 
+	if (x1 < 0 || y1 < 0 || x2 >= MAP_WIDTH|| y2 >= MAP_HEIGHT)
+	{
+		return;
+	}
+    
 	uint frac_x = (int)(255.0f * (pos[y].x - (int)( pos[y].x )));
 	uint frac_y = (int)(255.0f * (pos[y].y - (int)( pos[y].y )));
 	uint w0 = (frac_x * frac_y) >> 8;

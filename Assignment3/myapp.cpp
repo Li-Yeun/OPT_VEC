@@ -154,7 +154,7 @@ void MyApp::Init()
 	// bushes
 	for(int i = 0; i < 3; i++)
 	{ 
-		bushRender_kernel[i] = new Kernel("render.cl", "render2");
+		bushRender_kernel[i] = new Kernel("render.cl", "bushrender");
 
 		bushSpriteBuffer[i] = new Buffer(bush_size[i] , 0, bush[i]->pixels);
 
@@ -284,20 +284,8 @@ void MyApp::Tick( float deltaTime )
 	//}
 	//deviceBuffer->CopyToDevice(true);
 
-	//Tanks
-	{
-		tankPosBuffer->CopyToDevice(true);
-		tankFrameBuffer->CopyToDevice(true);
-
-		remove_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
-
-		saveLastPos_kernel->Run(tanks);
-		backup_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
-
-		render_kernel->Run2D(int2(35 * 35, tanks), int2(35, 1));
-	}
 	// Bushes
-	/*
+	
 	for(int i = 0; i<3; i++)
 	{
 		int frameSize = bush[i]->frameSize;
@@ -310,7 +298,20 @@ void MyApp::Tick( float deltaTime )
 		bushBackup_kernel[i]->Run2D(int2(frameSize * frameSize, bushCount[i]), int2(frameSize, 1));
 
 		bushRender_kernel[i]->Run2D(int2((frameSize-1) * (frameSize-1), bushCount[i]), int2((frameSize-1), 1));
-	}*/
+	}
+	//Tanks
+	{
+		tankPosBuffer->CopyToDevice(true);
+		tankFrameBuffer->CopyToDevice(true);
+
+		remove_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
+
+		saveLastPos_kernel->Run(tanks);
+		backup_kernel->Run2D(int2(36 * 36, tanks), int2(36, 1));
+
+		render_kernel->Run2D(int2(35 * 35, tanks), int2(35, 1));
+	}
+
 	deviceBuffer->CopyFromDevice(true);
 
 	int2 cursorPos = map.ScreenToMap( mousePos );
