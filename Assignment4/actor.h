@@ -105,6 +105,7 @@ public:
 	const static __m128i c255;
 	const static __m128 zero;
 	const static __m128 one;
+
 };
 
 } // namespace Tmpl8

@@ -12,6 +12,7 @@ __kernel void Remove(__global uint* pixels, __global int2* lastPos,  __global ui
 {   
     //x = spriteFrameSize * spriteFrameSize
     //y = total tanks
+    
     int y = get_global_id(1);
     if(!lastTarget[y])
        return;
@@ -42,13 +43,7 @@ __kernel void Backup(__global uint* pixels, __global float2* pos, __global uint*
 
     int v = x / spriteFrameSize;
     int u = x % spriteFrameSize;
-	// OPT: Precalculations
-    /*
-	uint* dst_start = pixels + x1 + y1 * MAP_WIDTH;
-    for (int v = 0; v < spriteFrameSize; v++)
-    {
-        memcpy( backup + v * spriteFrameSize, dst_start + v * MAP_WIDTH, spriteFrameSize * 4 );
-    }*/
+
     backupBuffer[v * spriteFrameSize + u + y * (spriteFrameSize + 1) * (spriteFrameSize + 1) ] = pixels[x1 + (y1 + v)* MAP_WIDTH + u];
 
 }
@@ -56,6 +51,7 @@ __kernel void Backup(__global uint* pixels, __global float2* pos, __global uint*
 __kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, __global bool* lastTarget, int spriteFrameSize)
 {
     //x = totalTanks;
+
     int x = get_global_id(0);
 
     int x1 = (int) pos[x].x - (spriteFrameSize >> 1), x2 = x1 + spriteFrameSize;
@@ -74,30 +70,15 @@ __kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global 
 {
     //x = (spriteFrameSize - 1) * (spriteFrameSize - 1)
     //y = totalTanks
-    //x = spriteFrameSize - 1 * spriteFrameSize - 1
+
     int y = get_global_id(1);
     int x = get_global_id(0);
     int spriteFrameSizeMinusOne = spriteFrameSize - 1;
     int v = x / spriteFrameSizeMinusOne;
     int u = x % spriteFrameSizeMinusOne;
-    
 
     int offset = sprite[y] * spriteFrameSize * spriteFrameSize * spriteFrameCount;
-    /*
-    for(int x = 0; x < MAP_WIDTH/2; x++)
-    {
-        for(int y = 0; y < MAP_HEIGHT/2; y++)
-            pixels[x + y * MAP_WIDTH] = 0xFF0000;
-    }*/
 
-    	// save the area of target that we are about to overwrite
-
-	// OPT: Ternary operator
-	//backup = backup ? backup : new uint[sqr( frameSize + 1 )];
-
-    
-	// OPT: Bit-shifts
-    
 	int x1 = (int) pos[y].x - (spriteFrameSize >> 1), x2 = x1 + spriteFrameSize;
 	int y1 = (int) pos[y].y - (spriteFrameSize >> 1), y2 = y1 + spriteFrameSize;
 
@@ -105,24 +86,7 @@ __kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global 
 	{
 		return;
 	}
-    /*
-	if (x1 < 0 || y1 < 0 || x2 >= MAP_WIDTH || y2 >= MAP_HEIGHT)
-	{
-		// out of range; skip
-		lastTarget = 0;
-		return;
-	}
-    
-	// OPT: Precalculations
-	uint* dst_start = pixels + x1 + y1 * MAP_WIDTH;
-    for (int v = 0; v < spriteFrameSize; v++)
-    {
-        memcpy( backup + v * spriteFrameSize, dst_start + v * MAP_WIDTH, spriteFrameSize * 4 );
-    }
-    */
-    /*
-	lastPos[y] = make_int2( x1, y1 );
-	lastTarget = target;*/
+
 	// calculate bilinear weights - these are constant in this case.
 	uint frac_x = (int)(255.0f * (pos[y].x - (int)( pos[y].x )));
 	uint frac_y = (int)(255.0f * (pos[y].y - (int)( pos[y].y )));
@@ -136,7 +100,6 @@ __kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global 
 	// draw the sprite frame
 	uint stride = spriteFrameCount * spriteFrameSize;
 	// Precalculations
-	int frameSizeMinusOne = spriteFrameSize - 1;
     int dst = x1 + (y1 + v) * MAP_WIDTH + u;
     int src = frame[y] * spriteFrameSize + v * stride + u + offset;
 

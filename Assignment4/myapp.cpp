@@ -8,7 +8,7 @@ TheApp* CreateApp() { return new MyApp(); }
 int totalTanks, tankCounter;
 void MyApp::Init()
 {	
-	std::cout << sizeof(int2) << std::endl;
+	//std::cout << sizeof(int2) << std::endl;
 	//std::cout << sizeof(uint) << std::endl;
 	// 
 	// load tank sprites
@@ -45,6 +45,9 @@ void MyApp::Init()
 	bush[0]->ScaleAlpha( 96 );
 	bush[1]->ScaleAlpha( 64 );
 	bush[2]->ScaleAlpha( 128 );
+	std::cout << bush[0]->frameCount << std::endl;
+	std::cout << bush[1]->frameCount << std::endl;
+	std::cout << bush[2]->frameCount << std::endl;
 	// pointer
 	pointer = new SpriteInstance( new Sprite( "assets/pointer.png" ) );
 	// create armies
@@ -79,7 +82,8 @@ void MyApp::Init()
 		uint p = mountains.pixels[x + y * mountains.width];
 		if ((p & 0xffff) == 0) peaks.push_back( make_float3( make_int3( x * 8, y * 8, (p >> 16) & 255 ) ) );
 	}
-	// add sandstorm
+	*/
+	//add sandstorm
 	for (int i = 0; i < 7500; i += 4)
 	{
 		int x[4] = { RandomUInt() % map.bitmap->width, RandomUInt() % map.bitmap->width, RandomUInt() % map.bitmap->width, RandomUInt() % map.bitmap->width };
@@ -90,6 +94,7 @@ void MyApp::Init()
 		uint c[4] = { map.bitmap->pixels[x[0] + y[0] * map.bitmap->width], map.bitmap->pixels[x[1] + y[1] * map.bitmap->width], map.bitmap->pixels[x[2] + y[2] * map.bitmap->width], map.bitmap->pixels[x[3] + y[3] * map.bitmap->width] };
 		sand.push_back( new Particle( s, p, c, d ) );
 	}
+	/*
 	// place flags
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
@@ -236,10 +241,10 @@ void MyApp::Tick( float deltaTime )
 	pointer->Remove();
 
 	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
-	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
+	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
 	// 
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
 		// actor got deleted, replace by last in list
