@@ -1428,7 +1428,14 @@ void Kernel::KillCL()
 // ----------------------------------------------------------------------------
 void Kernel::CheckCLStarted()
 {
-	if (!clStarted) FatalError( "Call InitCL() before using OpenCL functionality." );
+	if (!clStarted)
+	{
+		if (!InitCL())
+		{
+			FatalError("Call InitCL() before using OpenCL functionality.");
+		}
+		clStarted = true;
+	}
 }
 
 // SetArgument methods

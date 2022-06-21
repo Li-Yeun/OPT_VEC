@@ -1,8 +1,10 @@
 #include "precomp.h"
 
 // Tank constructor
-Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a )
+Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i)
 {
+	// set tank id
+	id = i;
 	// set position and destination
 	pos = make_float2( p );
 	target = make_float2( t );
@@ -20,6 +22,8 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a )
 	}
 	// set direction based on specified orientation
 	dir = directions[frame];
+
+	MyApp::tankTeam[id] = army;
 }
 
 // Tank::Tick : tank behaviour

@@ -6,10 +6,26 @@ TheApp* CreateApp() { return new MyApp(); }
 // Initialize the application
 // -----------------------------------------------------------
 void MyApp::Init()
-{
+{	
 	// load tank sprites
-	tank1 = new Sprite( "assets/tanks.png", make_int2( 128, 100 ), make_int2( 310, 360 ), 36, 256 );
-	tank2 = new Sprite( "assets/tanks.png", make_int2( 327, 99 ), make_int2( 515, 349 ), 36, 256 );
+	tank1 = new Sprite("assets/tanks.png", make_int2(128, 100), make_int2(310, 360), 36, 256);
+	tank2 = new Sprite("assets/tanks.png", make_int2(327, 99), make_int2(515, 349), 36, 256);
+
+	// Initialize variables
+	int tank1_sprite_size = tank1->frameSize * tank1->frameSize * tank1->frameCount;
+	int tank2_sprite_size = tank2->frameSize * tank2->frameSize * tank2->frameCount;
+
+	uint* tank_sprites = new uint[tank1_sprite_size + tank2_sprite_size];
+	std::copy(tank1->pixels, tank1->pixels + tank1_sprite_size, tank_sprites);
+	std::copy(tank2->pixels, tank2->pixels + tank2_sprite_size, tank_sprites + tank1_sprite_size);
+
+	int group1 = 16, group2 = 12, group3 = 8;
+	int totalTanks = (group1 * group1 + group2 * group2 + group3 * group3) * 2;
+	int tankCounter = 0;
+
+	tankTeam = new bool[totalTanks];
+	//Map::tankPos = new float2[totalTanks];
+
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
 	bush[1] = new Sprite( "assets/bush2.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 14, 256 );
@@ -20,27 +36,29 @@ void MyApp::Init()
 	// pointer
 	pointer = new SpriteInstance( new Sprite( "assets/pointer.png" ) );
 	// create armies
-	for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) // main groups
+	for (int y = 0; y < group1; y++) for (int x = 0; x < group1; x++) // main groups
 	{
-		Actor* army1Tank = new Tank( tank1, make_int2( 520 + x * 32, 2420 - y * 32 ), make_int2( 5000, -500 ), 0, 0 );
-		Actor* army2Tank = new Tank( tank2, make_int2( 3300 - x * 32, y * 32 + 700 ), make_int2( -1000, 4000 ), 10, 1 );
+		Actor* army1Tank = new Tank( tank1, make_int2( 520 + x * 32, 2420 - y * 32 ), make_int2( 5000, -500 ), 0, 0, tankCounter++);
+		Actor* army2Tank = new Tank( tank2, make_int2( 3300 - x * 32, y * 32 + 700 ), make_int2( -1000, 4000 ), 10, 1, tankCounter++);
+		actorPool.push_back( army1Tank );
+		actorPool.push_back( army2Tank );
+
+	}
+	for (int y = 0; y < group2; y++) for (int x = 0; x < group2; x++) // backup
+	{
+		Actor* army1Tank = new Tank( tank1, make_int2( 40 + x * 32, 2620 - y * 32 ), make_int2( 5000, -500 ), 0, 0, tankCounter++);
+		Actor* army2Tank = new Tank( tank2, make_int2( 3900 - x * 32, y * 32 + 300 ), make_int2( -1000, 4000 ), 10, 1, tankCounter++);
 		actorPool.push_back( army1Tank );
 		actorPool.push_back( army2Tank );
 	}
-	for (int y = 0; y < 12; y++) for (int x = 0; x < 12; x++) // backup
+	for (int y = 0; y < group3; y++) for (int x = 0; x < group3; x++) // small forward groups
 	{
-		Actor* army1Tank = new Tank( tank1, make_int2( 40 + x * 32, 2620 - y * 32 ), make_int2( 5000, -500 ), 0, 0 );
-		Actor* army2Tank = new Tank( tank2, make_int2( 3900 - x * 32, y * 32 + 300 ), make_int2( -1000, 4000 ), 10, 1 );
+		Actor* army1Tank = new Tank( tank1, make_int2( 1440 + x * 32, 2220 - y * 32 ), make_int2( 3500, -500 ), 0, 0, tankCounter++);
+		Actor* army2Tank = new Tank( tank2, make_int2( 2400 - x * 32, y * 32 + 900 ), make_int2( 1300, 4000 ), 128, 1, tankCounter++);
 		actorPool.push_back( army1Tank );
 		actorPool.push_back( army2Tank );
 	}
-	for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) // small forward groups
-	{
-		Actor* army1Tank = new Tank( tank1, make_int2( 1440 + x * 32, 2220 - y * 32 ), make_int2( 3500, -500 ), 0, 0 );
-		Actor* army2Tank = new Tank( tank2, make_int2( 2400 - x * 32, y * 32 + 900 ), make_int2( 1300, 4000 ), 128, 1 );
-		actorPool.push_back( army1Tank );
-		actorPool.push_back( army2Tank );
-	}
+
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -67,6 +85,21 @@ void MyApp::Init()
 	actorPool.push_back( flag2 );
 	// initialize map view
 	map.UpdateView( screen, zoom );
+	/*
+	// Initialize Kernels
+	tankDrawKernel = new Kernel("Kernels/renderer.cl", "draw");
+
+	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
+
+	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, 0, tank_sprites);
+	tankTeamBuffer = new Buffer(totalTanks / 4, 0, tankTeam);
+	//tankBackupBuffer = new Buffer()
+	tankDrawKernel->SetArgument(0, deviceBuffer);
+
+	deviceBuffer->CopyToDevice(true);
+	//tankTeamBuffer->CopyToDevice(true);
+	*/
+
 }
 
 // -----------------------------------------------------------
@@ -113,6 +146,12 @@ void MyApp::HandleInput()
 void MyApp::Tick( float deltaTime )
 {
 	Timer t;
+
+	/*
+	deviceBuffer->CopyFromDevice(false);
+	tankDrawKernel->Run(1);
+	*/
+
 	// draw the map
 	map.Draw( screen );
 	// rebuild actor grid

@@ -32,6 +32,19 @@ public:
 	static inline vector<Particle*> sand;		// sand particles
 	static inline Grid grid;					// actor grid for faster range queries
 	static inline int coolDown = 0;				// used to prevent simultaneous firing
+
+	// Output buffer
+	static inline Buffer* deviceBuffer;
+
+	// tanks
+	static inline uint* tankSprite;
+	static inline bool* tankTeam;
+
+	static inline Kernel* tankDrawKernel;
+
+	static inline Buffer* tankSpriteBuffer;
+	static inline Buffer* tankTeamBuffer;
+	static inline Buffer* tankBackupBuffer;
 };
 
 } // namespace Tmpl8

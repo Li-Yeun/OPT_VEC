@@ -18,12 +18,14 @@ public:
 	float2 pos, dir;
 	int frame;
 	static inline float2* directions = 0;
+
+	int id;
 };
 
 class Tank : public Actor
 {
 public:
-	Tank( Sprite* s, int2 p, int2 t, int f, int a );
+	Tank( Sprite* s, int2 p, int2 t, int f, int a, int i);
 	bool Tick();
 	uint GetType() { return Actor::TANK; }
 	float2 target;
