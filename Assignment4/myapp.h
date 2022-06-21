@@ -47,6 +47,7 @@ public:
 	static inline Kernel* tankDrawKernel;
 	static inline Kernel* tankBackupKernel;
 	static inline Kernel* tankSaveLastPosKernel;
+	static inline Kernel* tankRemoveKernel;
 
 	static inline Buffer* tankSpriteBuffer;
 	static inline Buffer* tankTeamBuffer;

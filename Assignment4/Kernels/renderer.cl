@@ -8,6 +8,21 @@ inline uint ScaleColor( const uint c, const uint scale )
 	return rb + ag;
 }
 
+__kernel void Remove(__global uint* pixels, __global int2* lastPos,  __global uint* backupBuffer, __global bool* lastTarget, int spriteFrameSize)
+{   
+    //x = spriteFrameSize * spriteFrameSize
+    //y = total tanks
+    int y = get_global_id(1);
+    if(!lastTarget[y])
+       return;
+
+    int x = get_global_id(0);
+    int v = x / spriteFrameSize;
+    int u = x % spriteFrameSize;
+
+    pixels[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backupBuffer[v * spriteFrameSize + u +  y * (spriteFrameSize + 1) * (spriteFrameSize + 1)];
+}
+
 __kernel void Backup(__global uint* pixels, __global float2* pos, __global uint* backupBuffer, __global bool* lastTarget, int spriteFrameSize)
 {
     //x = spriteFrameSize * spriteFrameSize
@@ -34,11 +49,11 @@ __kernel void Backup(__global uint* pixels, __global float2* pos, __global uint*
     {
         memcpy( backup + v * spriteFrameSize, dst_start + v * MAP_WIDTH, spriteFrameSize * 4 );
     }*/
-    backupBuffer[v * spriteFrameSize + u + y * (spriteFrameSize + 1) * (spriteFrameSize + 1) ] = pixels[x1 + y1 * MAP_WIDTH + u];
+    backupBuffer[v * spriteFrameSize + u + y * (spriteFrameSize + 1) * (spriteFrameSize + 1) ] = pixels[x1 + (y1 + v)* MAP_WIDTH + u];
 
 }
 
-__kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, int spriteFrameSize)
+__kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, __global bool* lastTarget, int spriteFrameSize)
 {
     //x = totalTanks;
     int x = get_global_id(0);
@@ -52,7 +67,7 @@ __kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, int spr
 	}
 
     lastPos[x] = (int2)( x1, y1 );
-    
+    lastTarget[x] = 1;
 }
 
 __kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global bool* sprite, __global float2* pos, __global int* frame, int spriteFrameSize, int spriteFrameCount)

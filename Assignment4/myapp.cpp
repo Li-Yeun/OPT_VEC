@@ -141,9 +141,18 @@ void MyApp::Init()
 
 	tankSaveLastPosKernel->SetArgument(0, tankPosBuffer);
 	tankSaveLastPosKernel->SetArgument(1, tankLastPosBuffer);
-	tankSaveLastPosKernel->SetArgument(2, tank1->frameSize);
+	tankSaveLastPosKernel->SetArgument(2, tankLastTargetBuffer);
+	tankSaveLastPosKernel->SetArgument(3, tank1->frameSize);
 
 	tankLastPosBuffer->CopyToDevice(true);
+
+	tankRemoveKernel = new Kernel("Kernels/renderer.cl", "Remove");
+	tankRemoveKernel->SetArgument(0, deviceBuffer);
+	tankRemoveKernel->SetArgument(1, tankLastPosBuffer);
+	tankRemoveKernel->SetArgument(2, tankBackupBuffer);
+	tankRemoveKernel->SetArgument(3, tankLastTargetBuffer);
+	tankRemoveKernel->SetArgument(4, tank1->frameSize);
+
 
 
 }
@@ -205,8 +214,11 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	pointer->Remove();
+
+	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
 	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
+	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
+	// 
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
