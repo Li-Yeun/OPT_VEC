@@ -44,6 +44,7 @@ public:
 	static inline int* tankFrame;
 	static inline bool* tankLastTarget;
 
+
 	static inline Kernel* tankDrawKernel;
 	static inline Kernel* tankBackupKernel;
 	static inline Kernel* tankSaveLastPosKernel;
@@ -56,6 +57,19 @@ public:
 	static inline Buffer* tankFrameBuffer;
 	static inline Buffer* tankBackupBuffer;
 	static inline Buffer* tankLastTargetBuffer;
+
+	// tank tracks
+	static inline float2* tankOldPos;
+	static inline float2* tankDir;
+	static inline float* tankSteer;
+
+	static inline Kernel* tankTrackKernel;
+
+	static inline Buffer* tankOldPosBuffer;
+	static inline Buffer* tankDirBuffer;
+	static inline Buffer* tankSteerBuffer;
+
+
 };
 
 } // namespace Tmpl8

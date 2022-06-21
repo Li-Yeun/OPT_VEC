@@ -33,6 +33,11 @@ void MyApp::Init()
 	MyApp::tankFrame = new int[totalTanks];
 	MyApp::tankLastTarget = new bool[totalTanks];
 
+	//tank tracks
+	MyApp::tankOldPos = new float2[totalTanks];
+	MyApp::tankDir = new float2[totalTanks];
+	MyApp::tankSteer = new float[totalTanks];
+
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
 	bush[1] = new Sprite( "assets/bush2.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 14, 256 );
@@ -153,6 +158,21 @@ void MyApp::Init()
 	tankRemoveKernel->SetArgument(3, tankLastTargetBuffer);
 	tankRemoveKernel->SetArgument(4, tank1->frameSize);
 
+	// Tank tracks
+	tankTrackKernel = new Kernel("Kernels/track.cl", "Track");
+	tankOldPosBuffer = new Buffer(totalTanks * 2, 0, tankOldPos);
+	tankDirBuffer = new Buffer(totalTanks * 2, 0, tankDir);
+	tankSteerBuffer = new Buffer(totalTanks, 0, tankSteer);
+
+	//.....
+	tankTrackKernel->SetArgument(0, deviceBuffer);
+	tankTrackKernel->SetArgument(1, tankOldPosBuffer);
+	tankTrackKernel->SetArgument(2, tankDirBuffer);
+	tankTrackKernel->SetArgument(3, tankSteerBuffer);
+
+	tankOldPosBuffer->CopyToDevice(true);
+	tankDirBuffer->CopyToDevice(true);
+	tankSteerBuffer->CopyToDevice(true);
 
 
 }
@@ -234,6 +254,11 @@ void MyApp::Tick( float deltaTime )
 
 	tankPosBuffer->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
+	tankOldPosBuffer->CopyToDevice(true);
+	tankDirBuffer->CopyToDevice(true);
+	tankSteerBuffer->CopyToDevice(true);
+
+	tankTrackKernel->Run(totalTanks);
 
 	tankBackupKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
 	tankSaveLastPosKernel->Run(totalTanks);
