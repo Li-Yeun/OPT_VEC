@@ -5,9 +5,10 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
+int totalTanks, tankCounter;
 void MyApp::Init()
 {	
-	//std::cout << sizeof(float2) << std::endl;
+	std::cout << sizeof(int2) << std::endl;
 	//std::cout << sizeof(uint) << std::endl;
 	// 
 	// load tank sprites
@@ -23,12 +24,14 @@ void MyApp::Init()
 	std::copy(tank2->pixels, tank2->pixels + tank2_sprite_size, tank_sprites + tank1_sprite_size);
 
 	int group1 = 16, group2 = 12, group3 = 8;
-	int totalTanks = (group1 * group1 + group2 * group2 + group3 * group3) * 2;
-	int tankCounter = 0;
+	totalTanks = (group1 * group1 + group2 * group2 + group3 * group3) * 2;
+	tankCounter = 0;
 
 	tankTeam = new bool[totalTanks];
 	MyApp::tankPos = new float2[totalTanks];
+	MyApp::tankLastPos = new int2[totalTanks];
 	MyApp::tankFrame = new int[totalTanks];
+	MyApp::tankLastTarget = new bool[totalTanks];
 
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
@@ -63,6 +66,7 @@ void MyApp::Init()
 		actorPool.push_back( army2Tank );
 	}
 
+	/*
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -87,11 +91,12 @@ void MyApp::Init()
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
+	*/
 	// initialize map view
 	map.UpdateView( screen, zoom );
 	
 	// Initialize Kernels
-	tankDrawKernel = new Kernel("Kernels/renderer.cl", "draw");
+	tankDrawKernel = new Kernel("Kernels/renderer.cl", "Draw");
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
 
@@ -99,18 +104,47 @@ void MyApp::Init()
 	tankTeamBuffer = new Buffer(totalTanks / 4, 0, tankTeam);
 	tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
 	tankFrameBuffer = new Buffer(totalTanks, 0, tankFrame);
-	tankBackupBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 
-	//tankBackupBuffer = new Buffer()
 	tankDrawKernel->SetArgument(0, deviceBuffer);
+	tankDrawKernel->SetArgument(1, tankSpriteBuffer);
+	tankDrawKernel->SetArgument(2, tankTeamBuffer);
+	tankDrawKernel->SetArgument(3, tankPosBuffer);
+	tankDrawKernel->SetArgument(4, tankFrameBuffer);
+	tankDrawKernel->SetArgument(5, tank1->frameSize);
+	tankDrawKernel->SetArgument(6, tank1->frameCount);
+
 
 	deviceBuffer->CopyToDevice(true);
-	/*
+	tankSpriteBuffer->CopyToDevice(true);
 	tankTeamBuffer->CopyToDevice(true);
+	tankPosBuffer->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
-	*/
 
-	
+
+	tankBackupKernel = new Kernel("Kernels/renderer.cl", "Backup");
+
+	tankBackupBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
+	tankLastTargetBuffer = new Buffer(totalTanks / 4, 0, tankLastTarget);
+
+	tankBackupKernel->SetArgument(0, deviceBuffer);
+	tankBackupKernel->SetArgument(1, tankPosBuffer);
+	tankBackupKernel->SetArgument(2, tankBackupBuffer);
+	tankBackupKernel->SetArgument(3, tankLastTargetBuffer);
+	tankBackupKernel->SetArgument(4, tank1->frameSize);
+
+	tankLastTargetBuffer->CopyToDevice(true);
+
+
+	tankSaveLastPosKernel = new Kernel("Kernels/renderer.cl", "SaveLastPos");
+
+	tankLastPosBuffer = new Buffer(totalTanks * 2, 0, tankLastPos);
+
+	tankSaveLastPosKernel->SetArgument(0, tankPosBuffer);
+	tankSaveLastPosKernel->SetArgument(1, tankLastPosBuffer);
+	tankSaveLastPosKernel->SetArgument(2, tank1->frameSize);
+
+	tankLastPosBuffer->CopyToDevice(true);
+
 
 }
 
@@ -171,9 +205,9 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	pointer->Remove();
-	for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
+	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
-	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
 	{
 		// actor got deleted, replace by last in list
@@ -185,8 +219,17 @@ void MyApp::Tick( float deltaTime )
 		i--;
 	}
 	coolDown++;
-	for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
-	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
+
+	tankPosBuffer->CopyToDevice(true);
+	tankFrameBuffer->CopyToDevice(true);
+
+	tankBackupKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
+	tankSaveLastPosKernel->Run(totalTanks);
+	tankDrawKernel->Run2D(int2((tank1->frameSize - 1)* (tank1->frameSize - 1), totalTanks), int2(tank1->frameSize - 1, 1));
+
+	deviceBuffer->CopyFromDevice(true);
+	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
+	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
 	int2 cursorPos = map.ScreenToMap( mousePos );
 	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse

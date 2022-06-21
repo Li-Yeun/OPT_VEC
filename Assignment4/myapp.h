@@ -40,15 +40,21 @@ public:
 	static inline uint* tankSprite;
 	static inline bool* tankTeam;
 	static inline float2* tankPos;
+	static inline int2* tankLastPos;
 	static inline int* tankFrame;
+	static inline bool* tankLastTarget;
 
 	static inline Kernel* tankDrawKernel;
+	static inline Kernel* tankBackupKernel;
+	static inline Kernel* tankSaveLastPosKernel;
 
 	static inline Buffer* tankSpriteBuffer;
 	static inline Buffer* tankTeamBuffer;
 	static inline Buffer* tankPosBuffer;
+	static inline Buffer* tankLastPosBuffer;
 	static inline Buffer* tankFrameBuffer;
 	static inline Buffer* tankBackupBuffer;
+	static inline Buffer* tankLastTargetBuffer;
 };
 
 } // namespace Tmpl8
