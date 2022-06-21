@@ -5,7 +5,7 @@ __kernel void backup(__global uint* backupBuffer)
 {
 
 }
-__kernel void draw(__global uint* pixels, int spriteFrameSize)
+__kernel void draw(__global uint* pixels)//, __global float2* pos, __global int* frame, spriteFrameSize, int spriteFrameCount)
 {
     /*
     for(int x = 0; x < MAP_WIDTH/2; x++)
@@ -16,38 +16,30 @@ __kernel void draw(__global uint* pixels, int spriteFrameSize)
 
     	// save the area of target that we are about to overwrite
 
+
 	// OPT: Precalculation
 	int frameSizeTimes4 = spriteFrameSize * 4;
 
 	// OPT: Ternary operator
-	backup = backup ? backup : new uint[sqr( frameSize + 1 )];
+	//backup = backup ? backup : new uint[sqr( frameSize + 1 )];
+
 	int2 intPos = make_int2( pos );
 	// OPT: Bit-shifts
-	int x1 = intPos.x - (frameSize >> 1), x2 = x1 + frameSize;
-	int y1 = intPos.y - (frameSize >> 1), y2 = y1 + frameSize;
-	if (x1 < 0 || y1 < 0 || x2 >= target->width || y2 >= target->height)
+	int x1 = intPos.x - (spriteFrameSize >> 1), x2 = x1 + spriteFrameSize;
+	int y1 = intPos.y - (spriteFrameSize >> 1), y2 = y1 + spriteFrameSize;
+	if (x1 < 0 || y1 < 0 || x2 >= MAP_WIDTH || y2 >= MAP_HEIGHT)
 	{
 		// out of range; skip
 		lastTarget = 0;
 		return;
 	}
 	// OPT: Precalculations
-	uint* dst_start = target->pixels + x1 + y1 * target->width;
-#ifdef UNROLLING
-	if ((frameSize & (frameSize - 1)) == 0)
-		for (int v = 0; v < frameSize; v += 2)
-		{
-			uint* new_backup = backup + v * frameSize;
-			uint* new_dst_start = dst_start + v * target->width;
-			memcpy( new_backup, new_dst_start, frameSizeTimes4 );
-			memcpy( new_backup + frameSize, new_dst_start + target->width, frameSizeTimes4 );
-		}
-	else
-	#endif
-		for (int v = 0; v < frameSize; v++)
-		{
-			memcpy( backup + v * frameSize, dst_start + v * target->width, frameSizeTimes4 );
-		}
+	uint* dst_start = pixels + x1 + y1 * MAP_WIDTH;
+    for (int v = 0; v < spriteFrameSize; v++)
+    {
+        memcpy( backup + v * spriteFrameSize, dst_start + v * MAP_WIDTH, frameSizeTimes4 );
+    }
+
 	lastPos = make_int2( x1, y1 );
 	lastTarget = target;
 	// calculate bilinear weights - these are constant in this case.
@@ -60,67 +52,23 @@ __kernel void draw(__global uint* pixels, int spriteFrameSize)
 	uint w2 = (frac_x * frac_y_inv) >> 8;
 	uint w3 = (frac_x_inv * frac_y_inv) >> 8;
 	// draw the sprite frame
-	uint stride = sprite->frameCount * frameSize;
+	uint stride = spriteFrameCount * spriteFrameSize;
 	// Precalculations
-	uint* src_start = sprite->pixels + frame * frameSize;
+	uint* src_start = sprite->pixels + frame * spriteFrameSize;
 	int frameSizeMinusOne = frameSize - 1;
-#ifdef UNROLLING
-	if ((frameSizeMinusOne & (frameSizeMinusOne - 1)) == 0)
-		for (int v = 0; v < frameSizeMinusOne; v += 2)
-		{
-			uint* new_dst_start = dst_start + v * target->width;
-			uint* new_src_start = src_start + v * stride;
-			uint* dst = new_dst_start;
-			uint* src = new_src_start;
-			for (int u = 0; u < frameSizeMinusOne; u++, src++, dst++)
-			{
-				uint pix = ScaleColor( src[0], w0 )
-					+ ScaleColor( src[1], w1 )
-					+ ScaleColor( src[stride], w2 )
-					+ ScaleColor( src[stride + 1], w3 );
-				uint alpha = pix >> 24;
-				*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-				u++, src++, dst++;
-				pix = ScaleColor( src[0], w0 )
-					+ ScaleColor( src[1], w1 )
-					+ ScaleColor( src[stride], w2 )
-					+ ScaleColor( src[stride + 1], w3 );
-				alpha = pix >> 24;
-				*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-			}
-			dst = new_dst_start + target->width;
-			src = new_src_start + stride;
-			for (int u = 0; u < frameSizeMinusOne; u++, src++, dst++)
-			{
-				uint pix = ScaleColor( src[0], w0 )
-					+ ScaleColor( src[1], w1 )
-					+ ScaleColor( src[stride], w2 )
-					+ ScaleColor( src[stride + 1], w3 );
-				uint alpha = pix >> 24;
-				*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-				u++, src++, dst++;
-				pix = ScaleColor( src[0], w0 )
-					+ ScaleColor( src[1], w1 )
-					+ ScaleColor( src[stride], w2 )
-					+ ScaleColor( src[stride + 1], w3 );
-				alpha = pix >> 24;
-				*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-			}
-		}
-	else
-	#endif
-		for (int v = 0; v < frameSizeMinusOne; v++)
-		{
-			uint* dst = dst_start + v * target->width;
-			uint* src = src_start + v * stride;
-			for (int u = 0; u < frameSizeMinusOne; u++, src++, dst++)
-			{
-				uint pix = ScaleColor( src[0], w0 )
-					+ ScaleColor( src[1], w1 )
-					+ ScaleColor( src[stride], w2 )
-					+ ScaleColor( src[stride + 1], w3 );
-				uint alpha = pix >> 24;
-				*dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
-			}
-		}
+
+    for (int v = 0; v < frameSizeMinusOne; v++)
+    {
+        uint* dst = dst_start + v * MAP_WIDTH;
+        uint* src = src_start + v * stride;
+        for (int u = 0; u < frameSizeMinusOne; u++, src++, dst++)
+        {
+            uint pix = ScaleColor( src[0], w0 )
+                + ScaleColor( src[1], w1 )
+                + ScaleColor( src[stride], w2 )
+                + ScaleColor( src[stride + 1], w3 );
+            uint alpha = pix >> 24;
+            *dst = ScaleColor( pix, alpha ) + ScaleColor( *dst, 255 - alpha );
+        }
+    }
 }

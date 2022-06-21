@@ -24,6 +24,8 @@ Tank::Tank( Sprite* s, int2 p, int2 t, int f, int a, int i)
 	dir = directions[frame];
 
 	MyApp::tankTeam[id] = army;
+	MyApp::tankPos[id] = pos;
+	MyApp::tankFrame[id] = frame;
 }
 
 // Tank::Tick : tank behaviour
@@ -98,6 +100,8 @@ bool Tank::Tick()
 		MyApp::map.bitmap->BlendBilerp( trackPos2.x, trackPos2.y, 0, 12 );
 	}
 	pos += dir * speed * 0.5f;
+	MyApp::tankPos[id] = pos;
+	MyApp::tankFrame[id] = frame;
 	// tanks never die
 	return true;
 }

@@ -39,11 +39,15 @@ public:
 	// tanks
 	static inline uint* tankSprite;
 	static inline bool* tankTeam;
+	static inline float2* tankPos;
+	static inline int* tankFrame;
 
 	static inline Kernel* tankDrawKernel;
 
 	static inline Buffer* tankSpriteBuffer;
 	static inline Buffer* tankTeamBuffer;
+	static inline Buffer* tankPosBuffer;
+	static inline Buffer* tankFrameBuffer;
 	static inline Buffer* tankBackupBuffer;
 };
 

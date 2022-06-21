@@ -7,6 +7,9 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 void MyApp::Init()
 {	
+	//std::cout << sizeof(float2) << std::endl;
+	//std::cout << sizeof(uint) << std::endl;
+	// 
 	// load tank sprites
 	tank1 = new Sprite("assets/tanks.png", make_int2(128, 100), make_int2(310, 360), 36, 256);
 	tank2 = new Sprite("assets/tanks.png", make_int2(327, 99), make_int2(515, 349), 36, 256);
@@ -24,7 +27,8 @@ void MyApp::Init()
 	int tankCounter = 0;
 
 	tankTeam = new bool[totalTanks];
-	//Map::tankPos = new float2[totalTanks];
+	MyApp::tankPos = new float2[totalTanks];
+	MyApp::tankFrame = new int[totalTanks];
 
 	// load bush sprite for dust streams
 	bush[0] = new Sprite( "assets/bush1.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 10, 256 );
@@ -85,7 +89,7 @@ void MyApp::Init()
 	actorPool.push_back( flag2 );
 	// initialize map view
 	map.UpdateView( screen, zoom );
-	/*
+	
 	// Initialize Kernels
 	tankDrawKernel = new Kernel("Kernels/renderer.cl", "draw");
 
@@ -93,12 +97,20 @@ void MyApp::Init()
 
 	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, 0, tank_sprites);
 	tankTeamBuffer = new Buffer(totalTanks / 4, 0, tankTeam);
+	tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
+	tankFrameBuffer = new Buffer(totalTanks, 0, tankFrame);
+	tankBackupBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
+
 	//tankBackupBuffer = new Buffer()
 	tankDrawKernel->SetArgument(0, deviceBuffer);
 
 	deviceBuffer->CopyToDevice(true);
-	//tankTeamBuffer->CopyToDevice(true);
+	/*
+	tankTeamBuffer->CopyToDevice(true);
+	tankFrameBuffer->CopyToDevice(true);
 	*/
+
+	
 
 }
 
