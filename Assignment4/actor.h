@@ -78,14 +78,14 @@ class Particle
 {
 public:
 	Particle() = default;
-	Particle( Sprite* s[4], float2 p[4], uint c[4], uint d[4] );
+	Particle( Sprite* s[4], float2 p[4], uint c[4], uint d[4], int i, uint t[4]);
 	void Remove() { sprite[0].Remove(); sprite[1].Remove(); sprite[2].Remove(); sprite[3].Remove(); }
 	void Tick();
 	void Draw() {
-		sprite[0].Draw( Map::bitmap, float2( pos[0], pos[4] ), frame[0] );
-		sprite[1].Draw( Map::bitmap, float2( pos[1], pos[5] ), frame[1] );
-		sprite[2].Draw( Map::bitmap, float2( pos[2], pos[6] ), frame[2] );
-		sprite[3].Draw( Map::bitmap, float2( pos[3], pos[7] ), frame[3] );
+		sprite[0].Draw( Map::bitmap, fpos[0], frame[0] );
+		sprite[1].Draw( Map::bitmap, fpos[1], frame[1] );
+		sprite[2].Draw( Map::bitmap, fpos[2], frame[2] );
+		sprite[3].Draw( Map::bitmap, fpos[3], frame[3] );
 	}
 	//uint backup[4], color = 0, frame, frameChange;
 	//bool hasBackup = false;
@@ -106,6 +106,8 @@ public:
 	const static __m128 zero;
 	const static __m128 one;
 
+	int id;
+	float2* fpos;
 };
 
 } // namespace Tmpl8

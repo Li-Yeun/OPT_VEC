@@ -264,7 +264,7 @@ SpriteExplosion::SpriteExplosion( Bullet* bullet )
 // Fast dust code by George Psomathianos
 
 // Particle constructor
-Particle::Particle( Sprite* s[4], float2 p[4], uint c[4], uint d[4] )
+Particle::Particle( Sprite* s[4], float2 p[4], uint c[4], uint d[4], int i, uint t[4])
 {
 	pos4[0] = _mm_set_ps( p[0].x, p[1].x, p[2].x, p[3].x );
 	pos4[1] = _mm_set_ps( p[0].y, p[1].y, p[2].y, p[3].y );
@@ -278,6 +278,25 @@ Particle::Particle( Sprite* s[4], float2 p[4], uint c[4], uint d[4] )
 	sprite[1] = SpriteInstance( s[1] );
 	sprite[2] = SpriteInstance( s[2] );
 	sprite[3] = SpriteInstance( s[3] );
+
+	id = i;
+	fpos = new float2[4];
+	fpos[0] = float2(pos[0], pos[4]);
+	fpos[1] = float2(pos[1], pos[5]);
+	fpos[2] = float2(pos[2], pos[6]);
+	fpos[3] = float2(pos[3], pos[7]);
+
+	for (int i = 0; i < 4; i++)
+	{
+		MyApp::bushType[id + i] = t[i];
+		MyApp::bushTypeIndex[MyApp::bushType[id + i]][MyApp::bushCounter[MyApp::bushType[id + i]]++] = id + i;
+		MyApp::bushPos[id + i] = fpos[i];
+
+		MyApp::bushLastPos[id + 1] = make_int2(fpos[i].x, fpos[i].y);
+
+		MyApp::bushFrame[id + i] = frame[i];
+		MyApp::bushLastTarget[id + i] = 0;
+	}
 
 }
 
@@ -330,4 +349,22 @@ void Particle::Tick()
 	dir4[1] = _mm_add_ps( dir4[1],
 		_mm_sub_ps( _mm_mul_ps( random4, c0_05 ), c0_025 ) );
 	frame4 = _mm_and_si128( _mm_add_epi32( _mm_add_epi32( frame4, frameChange4 ), c256 ), c255 );
+
+	// bush update
+
+	fpos[0] = float2(pos[0], pos[4]);
+	fpos[1] = float2(pos[1], pos[5]);
+	fpos[2] = float2(pos[2], pos[6]);
+	fpos[3] = float2(pos[3], pos[7]);
+
+	MyApp::bushPos[id] = fpos[0];
+	MyApp::bushPos[id+1] = fpos[1];
+	MyApp::bushPos[id+2] = fpos[2];
+	MyApp::bushPos[id+3] = fpos[3];
+
+	MyApp::bushFrame[id] = frame[0];
+	MyApp::bushFrame[id+1] = frame[1];
+	MyApp::bushFrame[id+2] = frame[2];
+	MyApp::bushFrame[id+3] = frame[3];
+
 }

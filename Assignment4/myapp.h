@@ -69,6 +69,34 @@ public:
 	static inline Buffer* tankDirBuffer;
 	static inline Buffer* tankSteerBuffer;
 
+	// dust particles
+	static inline uint* bushCount;
+	static inline uint* bushCounter;
+	static inline uint* bushTypeIndex[3];
+
+	static inline uint* bushFrameSize;
+	static inline uint* bushSpriteOffset;
+	static inline uint* bushType;
+	static inline float2* bushPos;
+	static inline int2* bushLastPos;
+	static inline int* bushFrame;
+	static inline bool* bushLastTarget;
+
+	static inline Kernel* bushDrawKernel;
+	static inline Kernel* bushBackupKernel[3];
+	static inline Kernel* bushSaveLastPosKernel;
+	static inline Kernel* bushRemoveKernel[3];
+
+	static inline Buffer* bushSpriteBuffer;
+	static inline Buffer* bushFrameSizeBuffer;
+	static inline Buffer* bushSpriteOffsetBuffer;
+	static inline Buffer* bushTypeBuffer;
+	static inline Buffer* bushTypeIndexBuffer[3];
+	static inline Buffer* bushPosBuffer;
+	static inline Buffer* bushLastPosBuffer;
+	static inline Buffer* bushFrameBuffer;
+	static inline Buffer* bushBackupBuffer[3];
+	static inline Buffer* bushLastTargetBuffer;
 
 };
 
