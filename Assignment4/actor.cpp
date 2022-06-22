@@ -39,6 +39,7 @@ bool Tank::Tick()
 		MyApp::actorPool.push_back( new ParticleExplosion( this ) );
 		pos = make_float2(-100, -100);
 		MyApp::tankPos[id] = pos;
+		MyApp::tankOldPos[id] = pos;
 		return false;
 	}
 	// fire bullet if cooled down and enemy is in range
