@@ -146,19 +146,19 @@ void MyApp::Init()
 		sand.push_back(new Particle(s, p, c, d, i, t));
 	}
 
-	/*
+	
 	// place flags
 	Surface* flagPattern = new Surface( "assets/flag.png" );
 	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
 	actorPool.push_back( flag1 );
 	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
 	actorPool.push_back( flag2 );
-	*/
+	
 	// initialize map view
 	map.UpdateView(screen, zoom);
 
 	// Initialize Kernels
-	tankDrawKernel = new Kernel("Kernels/renderer.cl", "Draw");
+	tankDrawKernel = new Kernel("Kernels/tank.cl", "Draw");
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
 
@@ -183,7 +183,7 @@ void MyApp::Init()
 	tankFrameBuffer->CopyToDevice(true);
 
 
-	tankBackupKernel = new Kernel("Kernels/renderer.cl", "Backup");
+	tankBackupKernel = new Kernel("Kernels/tank.cl", "Backup");
 
 	tankBackupBuffer = new Buffer(totalTanks * sqr(tank1->frameSize + 1));
 	tankLastTargetBuffer = new Buffer(totalTanks / 4, 0, tankLastTarget);
@@ -197,7 +197,7 @@ void MyApp::Init()
 	tankLastTargetBuffer->CopyToDevice(true);
 
 
-	tankSaveLastPosKernel = new Kernel("Kernels/renderer.cl", "SaveLastPos");
+	tankSaveLastPosKernel = new Kernel("Kernels/tank.cl", "SaveLastPos");
 
 	tankLastPosBuffer = new Buffer(totalTanks * 2, 0, tankLastPos);
 
@@ -208,7 +208,7 @@ void MyApp::Init()
 
 	tankLastPosBuffer->CopyToDevice(true);
 
-	tankRemoveKernel = new Kernel("Kernels/renderer.cl", "Remove");
+	tankRemoveKernel = new Kernel("Kernels/tank.cl", "Remove");
 	tankRemoveKernel->SetArgument(0, deviceBuffer);
 	tankRemoveKernel->SetArgument(1, tankLastPosBuffer);
 	tankRemoveKernel->SetArgument(2, tankBackupBuffer);
@@ -232,7 +232,7 @@ void MyApp::Init()
 	tankSteerBuffer->CopyToDevice(true);
 
 	// Bushes
-	bushDrawKernel = new Kernel("Kernels/renderer.cl", "BushDraw");
+	bushDrawKernel = new Kernel("Kernels/bush.cl", "Draw");
 
 	bushSpriteBuffer = new Buffer(bush1_sprite_size + bush2_sprite_size + bush3_sprite_size, 0, bush_sprites);
 	bushTypeBuffer = new Buffer(totalBushes, 0, bushType);
@@ -261,7 +261,7 @@ void MyApp::Init()
 
 	bushLastTargetBuffer = new Buffer(totalBushes / 4, 0, bushLastTarget);
 	for (int i = 0; i < 3; i++) {
-		bushBackupKernel[i] = new Kernel("Kernels/renderer.cl", "BushBackup");
+		bushBackupKernel[i] = new Kernel("Kernels/bush.cl", "Backup");
 		bushBackupBuffer[i] = new Buffer(bushCount[i] * sqr(bush[i]->frameSize + 1));
 		bushTypeIndexBuffer[i] = new Buffer(bushCount[i], 0, bushTypeIndex[i]);
 
@@ -277,7 +277,7 @@ void MyApp::Init()
 	bushLastTargetBuffer->CopyToDevice(true);
 
 
-	bushSaveLastPosKernel = new Kernel("Kernels/renderer.cl", "BushSaveLastPos");
+	bushSaveLastPosKernel = new Kernel("Kernels/bush.cl", "SaveLastPos");
 
 	bushLastPosBuffer = new Buffer(totalBushes, 0, bushLastPos);
 
@@ -290,7 +290,7 @@ void MyApp::Init()
 	bushLastPosBuffer->CopyToDevice(true);
 
 	for (int i = 0; i < 3; i++) {
-		bushRemoveKernel[i] = new Kernel("Kernels/renderer.cl", "BushRemove");
+		bushRemoveKernel[i] = new Kernel("Kernels/bush.cl", "Remove");
 		bushRemoveKernel[i]->SetArgument(0, deviceBuffer);
 		bushRemoveKernel[i]->SetArgument(1, bushLastPosBuffer);
 		bushRemoveKernel[i]->SetArgument(2, bushBackupBuffer[i]);
