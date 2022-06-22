@@ -65,7 +65,7 @@ __kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, __globa
     lastTarget[x] = 1;
 }
 
-__kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global bool* sprite, __global float2* pos, __global int* frame, int spriteFrameSize, int spriteFrameCount)
+__kernel void Draw(__global uint* pixels, __global __read_only uint* spritePixels, __global __read_only bool* sprite, __global __read_only float2* pos, __constant __read_only int* frame, int spriteFrameSize, int spriteFrameCount)
 {
     //x = (spriteFrameSize - 1) * (spriteFrameSize - 1)
     //y = totalTanks

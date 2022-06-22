@@ -30,7 +30,7 @@ inline void BlendBilerp(__global uint* pixels, float x, float y, uint c, uint w 
 	Blend(pixels, intPos.x + 1, intPos.y + 1, c, (w4 * w) >> 8 );
 }
 
-__kernel void Track(__global uint* pixels, __global float2* oldPos, __global float2* dir, __global float* steer)
+__kernel void Track(__global uint* pixels, __global __read_only float2* oldPos, __global __read_only float2* dir, __global __read_only float* steer)
 {
     int x = get_global_id(0);
     if (steer[x] >= -0.2f && steer[x] <= 0.2f)

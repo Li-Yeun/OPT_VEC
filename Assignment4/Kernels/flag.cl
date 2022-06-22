@@ -41,7 +41,7 @@ inline void PlotBilerp(__global uint* pixels, float x, float y, uint c )
 	Blend(pixels, intPos.x + 1, intPos.y + 1, c, w4 );
 }
 
-__kernel void Backup(__global uint* pixels,  __global float2* pos, __global uint* backup, __global bool* hasBackup, int spriteWidth, int spriteHeight, int posOffset, int backUpOffset)
+__kernel void Backup(__global uint* pixels,  __global __read_only float2* pos, __global uint* backup, __global bool* hasBackup, int spriteWidth, int spriteHeight, int posOffset, int backUpOffset)
 {
     // x = spriteWidth * spriteHeight * 4
     // y = total flags
@@ -65,7 +65,7 @@ __kernel void Backup(__global uint* pixels,  __global float2* pos, __global uint
 }
 
 
-__kernel void Draw(__global uint* pixels, __global uint* color,  __global float2* pos, int spriteWidth, int spriteHeight, int posOffset)
+__kernel void Draw(__global uint* pixels, __global __read_only uint* color,  __global float2* pos, int spriteWidth, int spriteHeight, int posOffset)
 {
     // x = spriteWidth * spriteHeight * 4
     // y = total flags
@@ -119,7 +119,7 @@ __kernel void Draw(__global uint* pixels, __global uint* color,  __global float2
 }
 
 
-__kernel void Remove(__global uint* pixels, __global float2* pos, __global uint* backup,  __global bool* hasBackup, int spriteWidth, int spriteHeight, int posOffset, int backUpOffset)
+__kernel void Remove(__global uint* pixels, __global __read_only float2* pos, __global uint* backup,  __global bool* hasBackup, int spriteWidth, int spriteHeight, int posOffset, int backUpOffset)
 {
     // x = spriteWidth * spriteHeight * 4
     // y = total flags
