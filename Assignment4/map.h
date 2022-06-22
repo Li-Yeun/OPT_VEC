@@ -18,6 +18,7 @@ public:
 	int2 focus;
 	int* elevation;
 	int width, height;
+	int2 dxy;
 	int4 view; // visible portion of the map
 };
 

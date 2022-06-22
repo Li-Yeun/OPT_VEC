@@ -49,6 +49,7 @@ void Map::UpdateView( Surface* target, float scale )
 	focus.y = (mapY1 + mapY2) >> 1;
 	view.x = mapX1, view.y = mapY1;
 	view.z = mapX2, view.w = mapY2;
+	dxy = make_int2(((view.z - view.x) * 16384) * inv_SCRWIDTH, ((view.w - view.y) * 16384) * inv_SCRHEIGHT);
 }
 
 void Map::Draw( Surface* target )

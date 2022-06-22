@@ -35,6 +35,10 @@ public:
 
 	// Output buffer
 	static inline Buffer* deviceBuffer;
+	Buffer* screenBuffer;
+	
+	// Screen draw kernel
+	static inline Kernel* screenKernel;
 
 	// tanks
 	static inline uint* tankSprite;

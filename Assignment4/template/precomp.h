@@ -1133,6 +1133,8 @@ public:
 	void SetArgument( int idx, float2 );
 	void SetArgument( int idx, float3 );
 	void SetArgument( int idx, float4 );
+	void SetArgument(int idx, int2);
+	void SetArgument(int idx, int4);
 	void SetFirstArgument( cl_mem* buffer ) { argIdx = 0; SetArgument( 0, buffer ); }
 	void SetFirstArgument( Buffer* buffer ) { argIdx = 0; SetArgument( 0, buffer ); }
 	void SetFirstArgument( float v ) { argIdx = 0; SetArgument( 0, v ); }
@@ -1153,6 +1155,7 @@ public:
 private:
 	// data members
 	cl_kernel kernel;
+	Buffer* acqBuffer = 0;
 	cl_mem vbo_cl;
 	cl_program program;
 	bool arg0set = false;

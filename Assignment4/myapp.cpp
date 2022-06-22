@@ -176,8 +176,14 @@ void MyApp::Init()
 	tankDrawKernel = new Kernel("Kernels/tank.cl", "Draw");
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
-	//deviceBuffer = new Buffer(GetRenderTarget()->ID, 0, Buffer::TARGET);
-	//screen = 0;
+	screenBuffer = new Buffer(GetRenderTarget()->ID, Buffer::TARGET, 0);
+	screen = 0;
+
+	screenKernel = new Kernel("Kernels/screen.cl", "renderToScreen");
+	screenKernel->SetArgument(0, deviceBuffer);
+	screenKernel->SetArgument(1, screenBuffer);
+	screenKernel->SetArgument(2, map.view);
+	screenKernel->SetArgument(3, map.dxy);
 
 	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, CL_MEM_READ_ONLY, tank_sprites);
 	tankTeamBuffer = new Buffer(totalTanks / 4, CL_MEM_READ_ONLY, tankTeam);
@@ -411,7 +417,7 @@ void MyApp::Tick( float deltaTime )
 	*/
 
 	// draw the map
-	map.Draw( screen );
+	//map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();
 	grid.Populate( actorPool );
@@ -470,12 +476,17 @@ void MyApp::Tick( float deltaTime )
 
 	bushSaveLastPosKernel->Run(totalBushes);
 	bushDrawKernel->Run2D(int2((max_bush_frameSize - 1) * (max_bush_frameSize - 1), totalBushes), int2(max_bush_frameSize - 1, 1));
+	clFinish(Kernel::GetQueue());
+	screenKernel->SetArgument(2, map.view);
+	screenKernel->SetArgument(3, map.dxy);
 
-	deviceBuffer->CopyFromDevice(true);
+	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
+	clFinish(Kernel::GetQueue());
+	//deviceBuffer->CopyFromDevice(true);
 	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
-	int2 cursorPos = map.ScreenToMap( mousePos );
-	pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
+	//int2 cursorPos = map.ScreenToMap( mousePos );
+	//pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
 	// handle mouse
 	HandleInput();
 	// report frame time
