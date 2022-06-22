@@ -8,7 +8,7 @@ inline uint ScaleColor( const uint c, const uint scale )
 	return rb + ag;
 }
 
-__kernel void Remove(__global uint* pixels, __global int2* lastPos,  __global uint* backupBuffer, __global bool* lastTarget, __global uint* spriteTypeIndexBuffer, int spriteFrameSize)
+__kernel void Remove(__global uint* pixels, __global __read_only int2* lastPos,  __global uint* backupBuffer, __global bool* lastTarget, __constant __read_only uint* spriteTypeIndexBuffer, int spriteFrameSize)
 {   
     //x = spriteFrameSize * spriteFrameSize
     //y = total tanks
@@ -25,7 +25,7 @@ __kernel void Remove(__global uint* pixels, __global int2* lastPos,  __global ui
     pixels[lastPos[index].x + (lastPos[index].y + v) * MAP_WIDTH + u] = backupBuffer[v * spriteFrameSize + u +  y * (spriteFrameSize + 1) * (spriteFrameSize + 1)];
 }
 
-__kernel void Backup(__global uint* pixels, __global float2* pos, __global uint* backupBuffer, __global bool* lastTarget, __global uint* spriteTypeIndexBuffer, int spriteFrameSize)
+__kernel void Backup(__global uint* pixels, __global __read_only float2* pos, __global uint* backupBuffer, __global bool* lastTarget, __constant __read_only uint* spriteTypeIndexBuffer, int spriteFrameSize)
 {
     //x = spriteFrameSize * spriteFrameSize
     //y = total tanks
@@ -50,7 +50,7 @@ __kernel void Backup(__global uint* pixels, __global float2* pos, __global uint*
     backupBuffer[v * spriteFrameSize + u + y * (spriteFrameSize + 1) * (spriteFrameSize + 1) ] = pixels[x1 + (y1 + v)* MAP_WIDTH + u];
 }
 
-__kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, __global bool* lastTarget, __global uint* sprite, __global uint* spriteFrameSizes)
+__kernel void SaveLastPos( __global __read_only float2* pos, __global int2* lastPos, __global bool* lastTarget, __constant __read_only uint* sprite, __constant __read_only uint* spriteFrameSizes)
 {
     //x = totalTanks;
 
@@ -69,7 +69,7 @@ __kernel void SaveLastPos( __global float2* pos, __global int2* lastPos, __globa
     lastTarget[x] = 1;
 }
 
-__kernel void Draw(__global uint* pixels, __global uint* spritePixels, __global uint* sprite, __global float2* pos, __global int* frame, __global uint* spriteFrameSizes, __global uint* spriteOffset, int spriteFrameCount)
+__kernel void Draw(__global uint* pixels, __global __read_only uint* spritePixels, __constant __read_only uint* sprite, __global __read_only float2* pos, __global __read_only int* frame, __constant __read_only uint* spriteFrameSizes, __constant __read_only uint* spriteOffset, int spriteFrameCount)
 {
     //x = (spriteFrameSize - 1) * (spriteFrameSize - 1)
     //y = totalTanks

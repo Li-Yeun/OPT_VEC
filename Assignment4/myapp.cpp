@@ -179,10 +179,10 @@ void MyApp::Init()
 	//deviceBuffer = new Buffer(GetRenderTarget()->ID, 0, Buffer::TARGET);
 	//screen = 0;
 
-	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, 0, tank_sprites);
-	tankTeamBuffer = new Buffer(totalTanks / 4, 0, tankTeam);
-	tankPosBuffer = new Buffer(totalTanks * 2, 0, tankPos);
-	tankFrameBuffer = new Buffer(totalTanks, 0, tankFrame);
+	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, CL_MEM_READ_ONLY, tank_sprites);
+	tankTeamBuffer = new Buffer(totalTanks / 4, CL_MEM_READ_ONLY, tankTeam);
+	tankPosBuffer = new Buffer(totalTanks * 2, CL_MEM_READ_ONLY, tankPos);
+	tankFrameBuffer = new Buffer(totalTanks, CL_MEM_READ_ONLY, tankFrame);
 
 	tankDrawKernel->SetArgument(0, deviceBuffer);
 	tankDrawKernel->SetArgument(1, tankSpriteBuffer);
@@ -235,9 +235,9 @@ void MyApp::Init()
 	// Tank tracks
 	tankTrackKernel = new Kernel("Kernels/track.cl", "Track");
 
-	tankOldPosBuffer = new Buffer(totalTanks * 2, 0, tankOldPos);
-	tankDirBuffer = new Buffer(totalTanks * 2, 0, tankDir);
-	tankSteerBuffer = new Buffer(totalTanks, 0, tankSteer);
+	tankOldPosBuffer = new Buffer(totalTanks * 2, CL_MEM_READ_ONLY, tankOldPos);
+	tankDirBuffer = new Buffer(totalTanks * 2, CL_MEM_READ_ONLY, tankDir);
+	tankSteerBuffer = new Buffer(totalTanks, CL_MEM_READ_ONLY, tankSteer);
 
 	tankTrackKernel->SetArgument(0, deviceBuffer);
 	tankTrackKernel->SetArgument(1, tankOldPosBuffer);
@@ -252,11 +252,11 @@ void MyApp::Init()
 	bushDrawKernel = new Kernel("Kernels/bush.cl", "Draw");
 
 	bushSpriteBuffer = new Buffer(bush1_sprite_size + bush2_sprite_size + bush3_sprite_size, 0, bush_sprites);
-	bushTypeBuffer = new Buffer(totalBushes, 0, bushType);
+	bushTypeBuffer = new Buffer(totalBushes, CL_MEM_READ_ONLY, bushType);
 	bushPosBuffer = new Buffer(totalBushes, 0, bushPos);
 	bushFrameBuffer = new Buffer(totalBushes, 0, bushFrame);
-	bushFrameSizeBuffer = new Buffer(3, 0, bushFrameSize);
-	bushSpriteOffsetBuffer = new Buffer(3, 0, bushSpriteOffset);
+	bushFrameSizeBuffer = new Buffer(3, CL_MEM_READ_ONLY, bushFrameSize);
+	bushSpriteOffsetBuffer = new Buffer(3, CL_MEM_READ_ONLY, bushSpriteOffset);
 
 
 	bushDrawKernel->SetArgument(0, deviceBuffer);
@@ -280,7 +280,7 @@ void MyApp::Init()
 	for (int i = 0; i < 3; i++) {
 		bushBackupKernel[i] = new Kernel("Kernels/bush.cl", "Backup");
 		bushBackupBuffer[i] = new Buffer(bushCount[i] * sqr(bush[i]->frameSize + 1));
-		bushTypeIndexBuffer[i] = new Buffer(bushCount[i], 0, bushTypeIndex[i]);
+		bushTypeIndexBuffer[i] = new Buffer(bushCount[i], CL_MEM_READ_ONLY, bushTypeIndex[i]);
 
 		bushBackupKernel[i]->SetArgument(0, deviceBuffer);
 		bushBackupKernel[i]->SetArgument(1, bushPosBuffer);
@@ -319,8 +319,8 @@ void MyApp::Init()
 	// Flags
 	flagDrawKernel = new Kernel("Kernels/flag.cl", "Draw");
 
-	flagSpriteBuffer = new Buffer(flagPosOffset, 0, flagSprite);
-	flagPosBuffer = new Buffer(flagPosOffset * totalFlags * 2, 0, flagPos);
+	flagSpriteBuffer = new Buffer(flagPosOffset, CL_MEM_READ_ONLY, flagSprite);
+	flagPosBuffer = new Buffer(flagPosOffset * totalFlags * 2, CL_MEM_READ_ONLY, flagPos);
 
 	flagDrawKernel->SetArgument(0, deviceBuffer);
 	flagDrawKernel->SetArgument(1, flagSpriteBuffer);
@@ -441,14 +441,14 @@ void MyApp::Tick( float deltaTime )
 	}
 	coolDown++;
 
-	tankPosBuffer->CopyToDevice(true);
-	tankFrameBuffer->CopyToDevice(true);
-	tankOldPosBuffer->CopyToDevice(true);
-	tankDirBuffer->CopyToDevice(true);
-	tankSteerBuffer->CopyToDevice(true);
+	tankPosBuffer->CopyToDevice(false);
+	tankFrameBuffer->CopyToDevice(false);
+	tankOldPosBuffer->CopyToDevice(false);
+	tankDirBuffer->CopyToDevice(false);
+	tankSteerBuffer->CopyToDevice(false);
 
-	bushPosBuffer->CopyToDevice(true);
-	bushFrameBuffer->CopyToDevice(true);
+	bushPosBuffer->CopyToDevice(false);
+	bushFrameBuffer->CopyToDevice(false);
 
 	flagPosBuffer->CopyToDevice(true);
 
