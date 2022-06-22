@@ -171,11 +171,11 @@ void MyApp::Init()
 	actorPool.push_back(flag2);
 
 
-	bulletPos = new float2[maxBullets];
-	bulletLastPos = new int2[maxBullets];
-	bulletFrame = new int[maxBullets];
-	bulletFrameCounter = new int[maxBullets];
-	bulletLastTarget = new bool[maxBullets];
+	bulletPos = new float2[maxBullets]{ float2{-1,-1} };
+	bulletLastPos = new int2[maxBullets]{ int2{-1,-1} };
+	bulletFrame = new int[maxBullets] {-1};
+	bulletFrameCounter = new int[maxBullets] { -1 };
+	bulletLastTarget = new bool[maxBullets] {false};
 
 	flashSprite = new Sprite("assets/flash.png");
 	bulletSprite = new Sprite("assets/bullet.png", make_int2(2, 2), make_int2(31, 31), 32, 256);
@@ -402,6 +402,7 @@ void MyApp::Init()
 	bulletSpriteBuffer->CopyToDevice(true);
 	bulletPosBuffer->CopyToDevice(true);
 	bulletFrameBuffer->CopyToDevice(true);
+	bulletFrameCounterBuffer->CopyToDevice(true);
 
 	bulletBackupKernel = new Kernel("Kernels/bullet.cl", "Backup");
 
@@ -531,7 +532,7 @@ void MyApp::Tick( float deltaTime )
 
 	bulletPosBuffer->CopyToDevice(false);
 	bulletFrameBuffer->CopyToDevice(false);
-	bulletFrameCounterBuffer->CopyToDevice(false);
+	bulletFrameCounterBuffer->CopyToDevice(true);
 
 	tankTrackKernel->Run(totalTanks);
 

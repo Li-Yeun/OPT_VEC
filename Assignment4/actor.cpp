@@ -159,7 +159,8 @@ bool Bullet::Tick()
 	pos += dir * 8;
 	// destroy bullet if it travelled too long
 	frameCounter++;
-
+	MyApp::bulletPos[id] = pos;
+	MyApp::bulletFrameCounter[id] = frameCounter;
 	if (frameCounter == 110)
 	{
 		MyApp::actorPool.push_back( new SpriteExplosion( this ) );
@@ -189,8 +190,6 @@ bool Bullet::Tick()
 			return false; // bees die from stinging. Disable for rail gun.
 		}
 	}
-	MyApp::bulletPos[id] = pos;
-	MyApp::bulletFrameCounter[id] = frameCounter;
 	// stayin' alive
 	return true;
 }
