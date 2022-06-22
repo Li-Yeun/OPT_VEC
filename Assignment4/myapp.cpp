@@ -467,7 +467,8 @@ void MyApp::Tick( float deltaTime )
 	flagBackupKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(totalFlags, 1));
 	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
-
+	int2 cursorPos = map.ScreenToMap(mousePos);
+	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 
 
 	// bush draw
@@ -479,14 +480,15 @@ void MyApp::Tick( float deltaTime )
 	clFinish(Kernel::GetQueue());
 	screenKernel->SetArgument(2, map.view);
 	screenKernel->SetArgument(3, map.dxy);
+	
+	
 
 	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
 	clFinish(Kernel::GetQueue());
 	//deviceBuffer->CopyFromDevice(true);
 	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
 	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
-	//int2 cursorPos = map.ScreenToMap( mousePos );
-	//pointer->Draw( map.bitmap, make_float2( cursorPos ), 0 );
+
 	// handle mouse
 	HandleInput();
 	// report frame time
