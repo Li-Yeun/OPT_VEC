@@ -85,7 +85,7 @@ __kernel void Draw(__global uint* pixels, __global __read_only uint* spritePixel
 	}
 
     int spriteFrameCount = 256;
-    int offset = spriteFrameSize * spriteFrameSize * spriteFrameCount;
+    int offset = spriteFrameSize * spriteFrameSize;
 
     int final_frame = frame[y];
 	if (frameCounter[y] == 1 || frameCounter[y] == 159)
