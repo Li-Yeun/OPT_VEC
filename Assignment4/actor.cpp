@@ -129,12 +129,11 @@ Bullet::Bullet( int2 p, int f, int a)
 	// create sprite instances based on the static sprite data
 	sprite = SpriteInstance( bullet );
 	flashSprite = SpriteInstance( flash );
-	std::cout << MyApp::bulletCounter << std::endl;
 	if (MyApp::bulletCounter >= MyApp::maxBullets)
 	{
 		MyApp::bulletCounter = 0;
-		id = MyApp::bulletCounter;
 	}
+	id = MyApp::bulletCounter;
 	MyApp::bulletPos[id] = pos;
 	MyApp::bulletLastPos[id] = make_int2(pos.x, pos.y);
 	MyApp::bulletFrame[id] = frame;
@@ -160,13 +159,22 @@ bool Bullet::Tick()
 	pos += dir * 8;
 	// destroy bullet if it travelled too long
 	frameCounter++;
+	MyApp::bulletPos[id] = pos;
+	MyApp::bulletFrameCounter[id] = frameCounter;
 	if (frameCounter == 110)
 	{
 		MyApp::actorPool.push_back( new SpriteExplosion( this ) );
+		pos = make_float2(-100, -100);
+		MyApp::bulletPos[id] = pos;
 		return false;
 	}
 	// destroy bullet if it leaves the map
-	if (pos.x < 0 || pos.y < 0 || pos.x > MyApp::map.width || pos.y > MyApp::map.height) return false;
+	if (pos.x < 0 || pos.y < 0 || pos.x > MyApp::map.width || pos.y > MyApp::map.height)
+	{
+		pos = make_float2(-100, -100);
+		MyApp::bulletPos[id] = pos;
+		return false;
+	}
 	// check if the bullet hit a tank
 	ActorList& tanks = MyApp::grid.FindNearbyTanks( pos );
 	for (int s = (int)tanks.count, i = 0; i < s; i++)
@@ -177,11 +185,11 @@ bool Bullet::Tick()
 		if (dist < 10)
 		{
 			tank->hitByBullet = true; // tank will need to draw it's own conclusion
+			pos = make_float2(-100, -100);
+			MyApp::bulletPos[id] = pos;
 			return false; // bees die from stinging. Disable for rail gun.
 		}
 	}
-	MyApp::bulletPos[id] = pos;
-	MyApp::bulletFrameCounter[id] = frameCounter;
 	// stayin' alive
 	return true;
 }
