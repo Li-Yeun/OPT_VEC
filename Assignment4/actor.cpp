@@ -52,7 +52,7 @@ bool Tank::Tick()
 			if (dot( toActor, dir ) > 0.8f /* within view cone*/)
 			{
 				// create a bullet and add it to the actor list
-				Bullet* newBullet = new Bullet( make_int2( pos + 20 * dir ), frame, army );
+				Bullet* newBullet = new Bullet(make_int2( pos + 20 * dir ), frame, army);
 				MyApp::actorPool.push_back( newBullet );
 				// reset cooldown timer so we don't do rapid fire
 				coolDown = 0;
@@ -112,7 +112,7 @@ bool Tank::Tick()
 }
 
 // Bullet constructor
-Bullet::Bullet( int2 p, int f, int a )
+Bullet::Bullet( int2 p, int f, int a)
 {
 	// set position and direction
 	pos = make_float2( p );
@@ -123,12 +123,24 @@ Bullet::Bullet( int2 p, int f, int a )
 	if (flash == 0)
 	{
 		// load static sprite data if not done yet
-		flash = new Sprite( "assets/flash.png" );
-		bullet = new Sprite( "assets/bullet.png", make_int2( 2, 2 ), make_int2( 31, 31 ), 32, 256 );
+		flash = MyApp::flashSprite;
+		bullet = MyApp::bulletSprite;
 	}
 	// create sprite instances based on the static sprite data
 	sprite = SpriteInstance( bullet );
 	flashSprite = SpriteInstance( flash );
+	std::cout << MyApp::bulletCounter << std::endl;
+	if (MyApp::bulletCounter >= MyApp::maxBullets)
+	{
+		MyApp::bulletCounter = 0;
+		id = MyApp::bulletCounter;
+	}
+	MyApp::bulletPos[id] = pos;
+	MyApp::bulletLastPos[id] = make_int2(pos.x, pos.y);
+	MyApp::bulletFrame[id] = frame;
+	MyApp::bulletFrameCounter[id] = frameCounter;
+	MyApp::bulletLastTarget[id] = 0;
+	MyApp::bulletCounter += 1;
 }
 
 // Bullet 'undraw': erase previously rendered pixels
@@ -168,6 +180,8 @@ bool Bullet::Tick()
 			return false; // bees die from stinging. Disable for rail gun.
 		}
 	}
+	MyApp::bulletPos[id] = pos;
+	MyApp::bulletFrameCounter[id] = frameCounter;
 	// stayin' alive
 	return true;
 }

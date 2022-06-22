@@ -36,7 +36,7 @@ public:
 class Bullet : public Actor
 {
 public:
-	Bullet( int2 p, int f, int a );
+	Bullet( int2 p, int f, int a);
 	void Remove();
 	bool Tick();
 	void Draw();
