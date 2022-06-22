@@ -7,6 +7,7 @@ TheApp* CreateApp() { return new MyApp(); }
 // -----------------------------------------------------------
 int totalTanks, tankCounter;
 int totalBushes, max_bush_frameSize;
+int totalFlags, flagPosOffset, flagBackupOffset;
 void MyApp::Init()
 {
 	//std::cout << sizeof(int2) << std::endl;
@@ -146,14 +147,27 @@ void MyApp::Init()
 		sand.push_back(new Particle(s, p, c, d, i, t));
 	}
 
-	
+
+	totalFlags = 2;
+	uint flagCounter = 0;
+
 	// place flags
-	Surface* flagPattern = new Surface( "assets/flag.png" );
-	VerletFlag* flag1 = new VerletFlag( make_int2( 3000, 848 ), flagPattern );
-	actorPool.push_back( flag1 );
-	VerletFlag* flag2 = new VerletFlag( make_int2( 1076, 1870 ), flagPattern );
-	actorPool.push_back( flag2 );
-	
+	Surface* flagPattern = new Surface("assets/flag.png");
+
+	flagPosOffset = flagPattern->width * flagPattern->height;
+	flagBackupOffset = flagPosOffset * 4;
+
+	uint* flagSprite = new uint[flagPosOffset];
+	std::copy(flagPattern->pixels, flagPattern->pixels + flagPosOffset, flagSprite);
+
+	flagPos = new float2[flagPattern->width * flagPattern->height * totalFlags];
+	flagHasBackup = new bool[totalFlags];
+
+	VerletFlag* flag1 = new VerletFlag(make_int2(3000, 848), flagPattern, flagCounter++);
+	actorPool.push_back(flag1);
+	VerletFlag* flag2 = new VerletFlag(make_int2(1076, 1870), flagPattern, flagCounter++);
+	actorPool.push_back(flag2);
+
 	// initialize map view
 	map.UpdateView(screen, zoom);
 
@@ -298,6 +312,49 @@ void MyApp::Init()
 		bushRemoveKernel[i]->SetArgument(4, bushTypeIndexBuffer[i]);
 		bushRemoveKernel[i]->SetArgument(5, bush[i]->frameSize);
 	}
+
+	// Flags
+	flagDrawKernel = new Kernel("Kernels/flag.cl", "Draw");
+
+	flagSpriteBuffer = new Buffer(flagPosOffset, 0, flagSprite);
+	flagPosBuffer = new Buffer(flagPosOffset * totalFlags * 2, 0, flagPos);
+
+	flagDrawKernel->SetArgument(0, deviceBuffer);
+	flagDrawKernel->SetArgument(1, flagSpriteBuffer);
+	flagDrawKernel->SetArgument(2, flagPosBuffer);
+	flagDrawKernel->SetArgument(3, flagPattern->width);
+	flagDrawKernel->SetArgument(4, flagPattern->height);
+	flagDrawKernel->SetArgument(5, flagPosOffset);
+
+	flagSpriteBuffer->CopyToDevice(true);
+	flagPosBuffer->CopyToDevice(true);
+
+	flagBackupKernel = new Kernel("Kernels/flag.cl", "Backup");
+
+	flagBackupBuffer = new Buffer(flagBackupOffset * totalFlags);
+	flagHasBackupBuffer = new Buffer(max(totalFlags, 4) / 4, 0, flagHasBackup);
+
+	flagBackupKernel->SetArgument(0, deviceBuffer);
+	flagBackupKernel->SetArgument(1, flagPosBuffer);
+	flagBackupKernel->SetArgument(2, flagBackupBuffer);
+	flagBackupKernel->SetArgument(3, flagHasBackupBuffer);
+	flagBackupKernel->SetArgument(4, flagPattern->width);
+	flagBackupKernel->SetArgument(5, flagPattern->height);
+	flagBackupKernel->SetArgument(6, flagPosOffset);
+	flagBackupKernel->SetArgument(7, flagBackupOffset);
+
+	flagHasBackupBuffer->CopyToDevice(true);
+
+	flagRemoveKernel = new Kernel("Kernels/flag.cl", "Remove");
+
+	flagRemoveKernel->SetArgument(0, deviceBuffer);
+	flagRemoveKernel->SetArgument(1, flagPosBuffer);
+	flagRemoveKernel->SetArgument(2, flagBackupBuffer);
+	flagRemoveKernel->SetArgument(3, flagHasBackupBuffer);
+	flagRemoveKernel->SetArgument(4, flagPattern->width);
+	flagRemoveKernel->SetArgument(5, flagPattern->height);
+	flagRemoveKernel->SetArgument(6, flagPosOffset);
+	flagRemoveKernel->SetArgument(7, flagBackupOffset);
 }
 
 // -----------------------------------------------------------
@@ -362,7 +419,9 @@ void MyApp::Tick( float deltaTime )
 	{
 		bushRemoveKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
 	}
+	flagRemoveKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(2, totalFlags));
 	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
+
 	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
 	// 
@@ -388,11 +447,18 @@ void MyApp::Tick( float deltaTime )
 	bushPosBuffer->CopyToDevice(true);
 	bushFrameBuffer->CopyToDevice(true);
 
+	flagPosBuffer->CopyToDevice(true);
+
 	tankTrackKernel->Run(totalTanks);
 
 	tankBackupKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
 	tankSaveLastPosKernel->Run(totalTanks);
 	tankDrawKernel->Run2D(int2((tank1->frameSize - 1)* (tank1->frameSize - 1), totalTanks), int2(tank1->frameSize - 1, 1));
+
+	flagBackupKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(totalFlags, 1));
+	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
+	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
+
 
 
 	// bush draw

@@ -6,7 +6,7 @@ namespace Tmpl8
 class VerletFlag : public Actor
 {
 public:
-	VerletFlag( int2 location, Surface* pattern );
+	VerletFlag( int2 location, Surface* pattern, uint i);
 	void Draw();
 	bool Tick();
 	uint GetType() { return Actor::FLAG; }
@@ -18,6 +18,7 @@ public:
 	uint* backup = 0;
 	bool hasBackup = false;
 	int width, height;
+	int offset;
 
 	inline static uint64_t averageTickTime = 0;
 	inline static uint64_t averageDrawTime = 0;

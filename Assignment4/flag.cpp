@@ -3,7 +3,7 @@
 
 // Optimized flag code by Erik Welling.
 
-VerletFlag::VerletFlag( int2 location, Surface* pattern )
+VerletFlag::VerletFlag( int2 location, Surface* pattern, uint i)
 {
 	width = pattern->width;
 	height = pattern->height;
@@ -12,10 +12,17 @@ VerletFlag::VerletFlag( int2 location, Surface* pattern )
 	prevPos = new float2[width * height];
 	color = new uint[width * height];
 	backup = new uint[width * height * 4];
+	id = i;
+	offset = width * height * id;
 	memcpy( color, pattern->pixels, width * height * 4 );
 	for (int x = 0; x < width; x++) for (int y = 0; y < height; y++)
-		pos[x + y * width] = make_float2( location.x - x * 1.2f, y * 1.2f + location.y );
+	{
+		pos[x + y * width] = make_float2(location.x - x * 1.2f, y * 1.2f + location.y);
+		MyApp::flagPos[x + y * width + offset] = pos[x + y * width];
+	}
 	memcpy( prevPos, pos, width * height * 8 );
+
+	MyApp::flagHasBackup[id] = false;
 }
 
 void VerletFlag::Draw()
@@ -75,6 +82,7 @@ bool VerletFlag::Tick()
 			float2 nudge = make_float2( RandomFloat() - 0.5f, RandomFloat() - 0.5f );
 			pos[index] += nudge;
 		}
+		MyApp::flagPos[index + offset] = pos[index];
 	}
 
 	// constraints: limit distance
@@ -97,13 +105,21 @@ bool VerletFlag::Tick()
 
 					float2 halfExcess = (right - (right * invL) * 1.15f) * 0.5f;
 					pos[index] += halfExcess;
-					pos[index - 1] -= halfExcess;
+					int prevIndex = index - 1;
+					pos[prevIndex] -= halfExcess;
+					MyApp::flagPos[index + offset] = pos[index];
+					MyApp::flagPos[prevIndex + offset] = pos[prevIndex];
 				}
 
 				index += width;
 			}
 		}
-		for (int y = 0; y < height; y++) pos[y * width] = polePos + make_float2( 0.0f, y * 1.2f );
+		for (int y = 0; y < height; y++)
+		{
+			int yIndex = y * width;
+			pos[yIndex] = polePos + make_float2(0.0f, y * 1.2f);
+			MyApp::flagPos[yIndex + offset] = pos[yIndex];
+		}
 
 		if (squaredDelta < c * 1.11f)
 		{

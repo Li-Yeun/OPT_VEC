@@ -98,6 +98,19 @@ public:
 	static inline Buffer* bushBackupBuffer[3];
 	static inline Buffer* bushLastTargetBuffer;
 
+	// Flags
+	static inline uint* flagSprite;
+	static inline float2* flagPos;
+	static inline bool* flagHasBackup;
+
+	static inline Kernel* flagDrawKernel;
+	static inline Kernel* flagBackupKernel;
+	static inline Kernel* flagRemoveKernel;
+
+	static inline Buffer* flagSpriteBuffer;
+	static inline Buffer* flagPosBuffer;
+	static inline Buffer* flagBackupBuffer;
+	static inline Buffer* flagHasBackupBuffer;
 };
 
 } // namespace Tmpl8
