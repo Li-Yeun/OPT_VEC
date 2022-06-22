@@ -161,6 +161,9 @@ public:
 	uint width = 0, height = 0;
 };
 
+// template function access
+GLTexture* GetRenderTarget();
+
 // shader wrapper
 class mat4;
 class Shader

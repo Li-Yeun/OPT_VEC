@@ -40,6 +40,9 @@ static const CPUCaps cpucaps;
 // find the app implementation
 TheApp* CreateApp();
 
+// provide access to the render target, for OpenCL / OpenGL interop
+GLTexture* GetRenderTarget() { return renderTarget; }
+
 // GLFW callbacks
 void InitRenderTarget( int w, int h )
 {
@@ -47,6 +50,7 @@ void InitRenderTarget( int w, int h )
 	scrwidth = w, scrheight = h;
 	renderTarget = new GLTexture( scrwidth, scrheight, GLTexture::INTTARGET );
 }
+
 void ReshapeWindowCallback( GLFWwindow* window, int w, int h )
 {
 	glViewport( 0, 0, w, h );
@@ -268,7 +272,7 @@ void main()
 		// send the rendering result to the screen using OpenGL
 		if (frameNr++ > 1)
 		{
-			renderTarget->CopyFrom( app->screen );
+			if (app->screen) renderTarget->CopyFrom(app->screen);
 			shader->Bind();
 			shader->SetInputTexture( 0, "c", renderTarget );
 			DrawQuad();

@@ -1,4 +1,5 @@
 #include "precomp.h"
+#include "myapp.h"
 
 TheApp* CreateApp() { return new MyApp(); }
 
@@ -94,7 +95,7 @@ void MyApp::Init()
 		actorPool.push_back(army2Tank);
 	}
 
-	/*
+	
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -102,7 +103,7 @@ void MyApp::Init()
 		uint p = mountains.pixels[x + y * mountains.width];
 		if ((p & 0xffff) == 0) peaks.push_back( make_float3( make_int3( x * 8, y * 8, (p >> 16) & 255 ) ) );
 	}
-	*/
+	
 
 	//add sandstorm
 	totalBushes = 7500;
@@ -175,6 +176,8 @@ void MyApp::Init()
 	tankDrawKernel = new Kernel("Kernels/tank.cl", "Draw");
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
+	//deviceBuffer = new Buffer(GetRenderTarget()->ID, 0, Buffer::TARGET);
+	//screen = 0;
 
 	tankSpriteBuffer = new Buffer(tank1_sprite_size + tank2_sprite_size, 0, tank_sprites);
 	tankTeamBuffer = new Buffer(totalTanks / 4, 0, tankTeam);
