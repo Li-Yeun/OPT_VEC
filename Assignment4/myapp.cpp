@@ -171,7 +171,6 @@ void MyApp::Init()
 	actorPool.push_back(flag2);
 
 
-	std::cout << maxBullets << std::endl;
 	bulletPos = new float2[maxBullets];
 	bulletLastPos = new int2[maxBullets];
 	bulletFrame = new int[maxBullets];
@@ -499,6 +498,7 @@ void MyApp::Tick( float deltaTime )
 	{
 		bushRemoveKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
 	}
+	bulletRemoveKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
 	flagRemoveKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(2, totalFlags));
 	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
 
@@ -527,7 +527,11 @@ void MyApp::Tick( float deltaTime )
 	bushPosBuffer->CopyToDevice(false);
 	bushFrameBuffer->CopyToDevice(false);
 
-	flagPosBuffer->CopyToDevice(true);
+	flagPosBuffer->CopyToDevice(false);
+
+	bulletPosBuffer->CopyToDevice(false);
+	bulletFrameBuffer->CopyToDevice(false);
+	bulletFrameCounterBuffer->CopyToDevice(false);
 
 	tankTrackKernel->Run(totalTanks);
 
@@ -537,6 +541,11 @@ void MyApp::Tick( float deltaTime )
 
 	flagBackupKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(totalFlags, 1));
 	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
+
+	bulletBackupKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
+	bulletSaveLastPosKernel->Run(maxBullets);
+	bulletDrawKernel->Run2D(int2((bulletSprite->frameSize - 1) * (bulletSprite->frameSize - 1), maxBullets), int2(bulletSprite->frameSize - 1, 1));
+
 	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 
 
@@ -562,5 +571,5 @@ void MyApp::Tick( float deltaTime )
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	//printf( "frame time: %5.2fms\n", frameTimeAvg );
+	printf( "frame time: %5.2fms\n", frameTimeAvg );
 }

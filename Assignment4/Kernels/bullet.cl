@@ -85,14 +85,14 @@ __kernel void Draw(__global uint* pixels, __global __read_only uint* spritePixel
 	}
 
     int spriteFrameCount = 256;
-    int offset = 0;
+    int offset = spriteFrameSize * spriteFrameSize * spriteFrameCount;
 
     int final_frame = frame[y];
 	if (frameCounter[y] == 1 || frameCounter[y] == 159)
     {
         final_frame = 0;
         spriteFrameCount = 1;
-        offset =  y * spriteFrameSize * spriteFrameSize * spriteFrameCount;
+        offset =  0;
     }
     
 	// calculate bilinear weights - these are constant in this case.
