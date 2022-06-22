@@ -9,6 +9,7 @@ TheApp* CreateApp() { return new MyApp(); }
 int totalTanks, tankCounter;
 int totalBushes, max_bush_frameSize;
 int totalFlags, flagPosOffset, flagBackupOffset;
+
 void MyApp::Init()
 {
 	//std::cout << sizeof(int2) << std::endl;
@@ -168,6 +169,23 @@ void MyApp::Init()
 	actorPool.push_back(flag1);
 	VerletFlag* flag2 = new VerletFlag(make_int2(1076, 1870), flagPattern, flagCounter++);
 	actorPool.push_back(flag2);
+
+
+	std::cout << maxBullets << std::endl;
+	bulletPos = new float2[maxBullets];
+	bulletLastPos = new int2[maxBullets];
+	bulletFrame = new int[maxBullets];
+	bulletFrameCounter = new int[maxBullets];
+	bulletLastTarget = new bool[maxBullets];
+
+	flashSprite = new Sprite("assets/flash.png");
+	bulletSprite = new Sprite("assets/bullet.png", make_int2(2, 2), make_int2(31, 31), 32, 256);
+	int flash_sprite_size = flashSprite->frameSize * flashSprite->frameSize * flashSprite->frameCount;
+	int bullet_sprite_size = bulletSprite->frameSize * bulletSprite->frameSize * bulletSprite->frameCount;
+
+	uint* bullet_sprites = new uint[flash_sprite_size + bullet_sprite_size];
+	std::copy(flashSprite->pixels, flashSprite->pixels + flash_sprite_size, bullet_sprites);
+	std::copy(bulletSprite->pixels, bulletSprite->pixels + bullet_sprite_size, bullet_sprites + flash_sprite_size);
 
 	// initialize map view
 	map.UpdateView(screen, zoom);
@@ -364,6 +382,59 @@ void MyApp::Init()
 	flagRemoveKernel->SetArgument(5, flagPattern->height);
 	flagRemoveKernel->SetArgument(6, flagPosOffset);
 	flagRemoveKernel->SetArgument(7, flagBackupOffset);
+
+	// Bullets
+
+	bulletDrawKernel = new Kernel("Kernels/bullet.cl", "Draw");
+
+	bulletSpriteBuffer = new Buffer(flash_sprite_size + bullet_sprite_size, CL_MEM_READ_ONLY, bullet_sprites);
+	bulletPosBuffer = new Buffer(maxBullets * 2, CL_MEM_READ_ONLY, bulletPos);
+	bulletFrameBuffer = new Buffer(maxBullets, CL_MEM_READ_ONLY, bulletFrame);
+	bulletFrameCounterBuffer = new Buffer(maxBullets, CL_MEM_READ_ONLY, bulletFrameCounter);
+
+
+	bulletDrawKernel->SetArgument(0, deviceBuffer);
+	bulletDrawKernel->SetArgument(1, bulletSpriteBuffer);
+	bulletDrawKernel->SetArgument(2, bulletPosBuffer);
+	bulletDrawKernel->SetArgument(3, bulletFrameBuffer);
+	bulletDrawKernel->SetArgument(4, bulletSprite->frameSize);
+	bulletDrawKernel->SetArgument(5, bulletFrameCounterBuffer);
+
+	bulletSpriteBuffer->CopyToDevice(true);
+	bulletPosBuffer->CopyToDevice(true);
+	bulletFrameBuffer->CopyToDevice(true);
+
+	bulletBackupKernel = new Kernel("Kernels/bullet.cl", "Backup");
+
+	bulletBackupBuffer = new Buffer(maxBullets * sqr(bulletSprite->frameSize + 1));
+	bulletLastTargetBuffer = new Buffer(maxBullets / 4, 0, bulletLastTarget);
+
+	bulletBackupKernel->SetArgument(0, deviceBuffer);
+	bulletBackupKernel->SetArgument(1, bulletPosBuffer);
+	bulletBackupKernel->SetArgument(2, bulletBackupBuffer);
+	bulletBackupKernel->SetArgument(3, bulletLastTargetBuffer);
+	bulletBackupKernel->SetArgument(4, bulletSprite->frameSize);
+
+	bulletLastTargetBuffer->CopyToDevice(true);
+
+
+	bulletSaveLastPosKernel = new Kernel("Kernels/bullet.cl", "SaveLastPos");
+
+	bulletLastPosBuffer = new Buffer(maxBullets * 2, CL_MEM_READ_ONLY, bulletLastPos);
+
+	bulletSaveLastPosKernel->SetArgument(0, bulletPosBuffer);
+	bulletSaveLastPosKernel->SetArgument(1, bulletLastPosBuffer);
+	bulletSaveLastPosKernel->SetArgument(2, bulletLastTargetBuffer);
+	bulletSaveLastPosKernel->SetArgument(3, bulletSprite->frameSize);
+
+	bulletLastPosBuffer->CopyToDevice(true);
+
+	bulletRemoveKernel = new Kernel("Kernels/bullet.cl", "Remove");
+	bulletRemoveKernel->SetArgument(0, deviceBuffer);
+	bulletRemoveKernel->SetArgument(1, bulletLastPosBuffer);
+	bulletRemoveKernel->SetArgument(2, bulletBackupBuffer);
+	bulletRemoveKernel->SetArgument(3, bulletLastTargetBuffer);
+	bulletRemoveKernel->SetArgument(4, bulletSprite->frameSize);
 }
 
 // -----------------------------------------------------------
@@ -470,7 +541,6 @@ void MyApp::Tick( float deltaTime )
 	int2 cursorPos = map.ScreenToMap(mousePos);
 	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 
-
 	// bush draw
 	for (int i = 0; i < 3; i++)
 		bushBackupKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
@@ -494,5 +564,5 @@ void MyApp::Tick( float deltaTime )
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	printf( "frame time: %5.2fms\n", frameTimeAvg );
+	//printf( "frame time: %5.2fms\n", frameTimeAvg );
 }

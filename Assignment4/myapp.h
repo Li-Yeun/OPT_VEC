@@ -115,6 +115,31 @@ public:
 	static inline Buffer* flagPosBuffer;
 	static inline Buffer* flagBackupBuffer;
 	static inline Buffer* flagHasBackupBuffer;
+
+	// bullets
+	static inline Sprite* flashSprite;
+	static inline Sprite* bulletSprite;
+	static inline uint bulletCounter = 0;
+	static inline uint maxBullets = 200;
+	static inline float2* bulletPos;
+	static inline int2* bulletLastPos;
+	static inline int* bulletFrame;
+	static inline int* bulletFrameCounter;
+	static inline bool* bulletLastTarget;
+
+	static inline Kernel* bulletDrawKernel;
+	static inline Kernel* bulletBackupKernel;
+	static inline Kernel* bulletSaveLastPosKernel;
+	static inline Kernel* bulletRemoveKernel;
+
+	static inline Buffer* bulletSpriteBuffer;
+	static inline Buffer* bulletBackupBuffer;
+	static inline Buffer* bulletPosBuffer;
+	static inline Buffer* bulletLastPosBuffer;
+	static inline Buffer* bulletFrameBuffer;
+	static inline Buffer* bulletFrameCounterBuffer;
+	static inline Buffer* bulletLastTargetBuffer;
+
 };
 
 } // namespace Tmpl8
