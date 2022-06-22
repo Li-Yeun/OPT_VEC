@@ -40,6 +40,11 @@ public:
 	// Screen draw kernel
 	static inline Kernel* screenKernel;
 
+	//Pointer
+	static inline Kernel* pointerDrawKernel;
+
+	static inline Buffer* pointerSpriteBuffer;
+
 	// tanks
 	static inline uint* tankSprite;
 	static inline bool* tankTeam;

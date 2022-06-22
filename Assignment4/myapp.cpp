@@ -193,9 +193,18 @@ void MyApp::Init()
 	// Initialize Kernels
 	tankDrawKernel = new Kernel("Kernels/tank.cl", "Draw");
 
+	pointerDrawKernel = new Kernel("Kernels/pointer.cl", "Draw");
+	pointerSpriteBuffer = new Buffer(pointer->sprite->frameSize * pointer->sprite->frameSize, CL_MEM_READ_ONLY, pointer->sprite->pixels); 
+
+
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
 	screenBuffer = new Buffer(GetRenderTarget()->ID, Buffer::TARGET, 0);
 	screen = 0;
+
+	pointerDrawKernel->SetArgument(0, screenBuffer);
+	pointerDrawKernel->SetArgument(1, pointerSpriteBuffer);
+	pointerDrawKernel->SetArgument(2, make_int2(0, 0));
+	pointerDrawKernel->SetArgument(3, pointer->sprite->frameSize);
 
 	screenKernel = new Kernel("Kernels/screen.cl", "renderToScreen");
 	screenKernel->SetArgument(0, deviceBuffer);
@@ -219,6 +228,7 @@ void MyApp::Init()
 
 	deviceBuffer->CopyToDevice(true);
 	tankSpriteBuffer->CopyToDevice(true);
+	pointerSpriteBuffer->CopyToDevice(true);
 	tankTeamBuffer->CopyToDevice(true);
 	tankPosBuffer->CopyToDevice(true);
 	tankFrameBuffer->CopyToDevice(true);
@@ -493,7 +503,7 @@ void MyApp::Tick( float deltaTime )
 	grid.Clear();
 	grid.Populate( actorPool );
 	// update and render actors
-	pointer->Remove();
+	// pointer->Remove();
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -538,8 +548,9 @@ void MyApp::Tick( float deltaTime )
 	flagBackupKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(totalFlags, 1));
 	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
-	int2 cursorPos = map.ScreenToMap(mousePos);
-	pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
+	//int2 cursorPos = map.ScreenToMap(mousePos);
+
+	//pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 
 	// bush draw
 	for (int i = 0; i < 3; i++)
@@ -554,6 +565,8 @@ void MyApp::Tick( float deltaTime )
 	
 
 	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
+	pointerDrawKernel->SetArgument(2, mousePos);
+	pointerDrawKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
 	clFinish(Kernel::GetQueue());
 	//deviceBuffer->CopyFromDevice(true);
 	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
