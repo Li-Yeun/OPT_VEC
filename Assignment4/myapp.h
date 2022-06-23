@@ -127,7 +127,7 @@ public:
 	static inline Sprite* flashSprite;
 	static inline Sprite* bulletSprite;
 	static inline uint bulletCounter = 0;
-	static inline uint maxBullets = 100;
+	static inline uint maxBullets = 50;
 	static inline float2* bulletPos;
 	static inline int2* bulletLastPos;
 	static inline int* bulletFrame;
@@ -153,7 +153,7 @@ public:
 	// spriteExplosion
 	static inline Sprite* spriteExplosionSprite;
 	static inline uint spriteExplosionCounter = 0;
-	static inline uint maxSpriteExplosion = 50;
+	static inline uint maxSpriteExplosion = 20;
 
 	static inline int2* spriteExplosionPos;
 	static inline int2* spriteExplosionLastPos;
