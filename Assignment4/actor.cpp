@@ -291,6 +291,7 @@ SpriteExplosion::SpriteExplosion( Bullet* bullet )
 	id = MyApp::spriteExplosionCounter;
 
 	MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
+	MyApp::spriteExplosionLastPos[id] = make_int2(pos.x, pos.y);
 	MyApp::spriteExplosionFrame[id] = frame;
 	MyApp::spriteExplosionLastTarget[id] = 0;
 
@@ -303,7 +304,6 @@ bool SpriteExplosion::Tick()
 	{
 		pos = make_float2(-100, -100);
 		MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
-		MyApp::spriteExplosionFrame[id] = frame;
 		return false;
 	}
 

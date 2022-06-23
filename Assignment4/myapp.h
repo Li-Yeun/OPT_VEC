@@ -151,6 +151,7 @@ public:
 	static inline uint maxSpriteExplosion = 50;
 
 	static inline int2* spriteExplosionPos;
+	static inline int2* spriteExplosionLastPos;
 	static inline int* spriteExplosionFrame;
 	static inline bool* spriteExplosionLastTarget;
 
@@ -162,6 +163,7 @@ public:
 	static inline Buffer* spriteExplosionSpriteBuffer;
 	static inline Buffer* spriteExplosionBackupBuffer;
 	static inline Buffer* spriteExplosionPosBuffer;
+	static inline Buffer* spriteExplosionLastPosBuffer;
 	static inline Buffer* spriteExplosionFrameBuffer;
 	static inline Buffer* spriteExplosionLastTargetBuffer;
 

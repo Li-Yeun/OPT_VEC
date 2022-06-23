@@ -195,6 +195,7 @@ void MyApp::Init()
 	std::copy(spriteExplosionSprite->pixels, spriteExplosionSprite->pixels + spriteExplosion_sprite_size, spriteExplosion_sprites);
 
 	spriteExplosionPos = new int2[maxSpriteExplosion]{ int2{-1,-1} };
+	spriteExplosionLastPos = new int2[maxSpriteExplosion]{ int2{-1,-1} };
 	spriteExplosionFrame = new int[maxSpriteExplosion] {-1};
 	spriteExplosionLastTarget = new bool[maxSpriteExplosion] {false};
 
@@ -491,13 +492,18 @@ void MyApp::Init()
 
 	spriteExplosionSaveLastPosKernel = new Kernel("Kernels/spriteExplosion.cl", "SaveLastPos");
 
+	spriteExplosionLastPosBuffer = new Buffer(maxSpriteExplosion * 2, CL_MEM_READ_ONLY, spriteExplosionLastPos);
+
 	spriteExplosionSaveLastPosKernel->SetArgument(0, spriteExplosionPosBuffer);
-	spriteExplosionSaveLastPosKernel->SetArgument(1, spriteExplosionLastTargetBuffer);
-	spriteExplosionSaveLastPosKernel->SetArgument(2, spriteExplosionSprite->frameSize);
+	spriteExplosionSaveLastPosKernel->SetArgument(1, spriteExplosionLastPosBuffer);
+	spriteExplosionSaveLastPosKernel->SetArgument(2, spriteExplosionLastTargetBuffer);
+	spriteExplosionSaveLastPosKernel->SetArgument(3, spriteExplosionSprite->frameSize);
+
+	spriteExplosionLastPosBuffer->CopyToDevice(true);
 
 	spriteExplosionRemoveKernel = new Kernel("Kernels/spriteExplosion.cl", "Remove");
 	spriteExplosionRemoveKernel->SetArgument(0, deviceBuffer);
-	spriteExplosionRemoveKernel->SetArgument(1, spriteExplosionPosBuffer);
+	spriteExplosionRemoveKernel->SetArgument(1, spriteExplosionLastPosBuffer);
 	spriteExplosionRemoveKernel->SetArgument(2, spriteExplosionBackupBuffer);
 	spriteExplosionRemoveKernel->SetArgument(3, spriteExplosionLastTargetBuffer);
 	spriteExplosionRemoveKernel->SetArgument(4, spriteExplosionSprite->frameSize);

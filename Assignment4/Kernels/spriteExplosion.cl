@@ -12,7 +12,7 @@ inline uint AddBlend( const uint c1, const uint c2 )
 	return (r << 16) + (g << 8) + b;
 }
 
-__kernel void Remove(__global uint* pixels, __constant __read_only int2* pos,  __global uint* backupBuffer, __global bool* lastTarget, int spriteFrameSize)
+__kernel void Remove(__global uint* pixels, __global int2* lastPos,  __global uint* backupBuffer, __global bool* lastTarget, int spriteFrameSize)
 {   
     //x = spriteFrameSize * spriteFrameSize
     //y = total explosions
@@ -25,7 +25,7 @@ __kernel void Remove(__global uint* pixels, __constant __read_only int2* pos,  _
     int v = x / spriteFrameSize;
     int u = x % spriteFrameSize;
 
-    pixels[pos[y].x + (pos[y].y + v) * MAP_WIDTH + u] = backupBuffer[v * spriteFrameSize + u +  y * spriteFrameSize * spriteFrameSize];
+    pixels[lastPos[y].x + (lastPos[y].y + v) * MAP_WIDTH + u] = backupBuffer[v * spriteFrameSize + u +  y * spriteFrameSize * spriteFrameSize];
 }
 
 __kernel void Backup(__global uint* pixels,  __constant __read_only int2* pos, __global uint* backupBuffer, __global bool* lastTarget, int spriteFrameSize)
@@ -51,7 +51,7 @@ __kernel void Backup(__global uint* pixels,  __constant __read_only int2* pos, _
     backupBuffer[v * spriteFrameSize + u + y * spriteFrameSize * spriteFrameSize ] = pixels[x1 + (y1 + v)* MAP_WIDTH + u];
 }
 
-__kernel void SaveLastPos(__constant __read_only int2* pos, __global bool* lastTarget, int spriteFrameSize)
+__kernel void SaveLastPos(__constant __read_only int2* pos,  __global int2* lastPos, __global bool* lastTarget, int spriteFrameSize)
 {
     //x = explosions;
 
@@ -65,6 +65,7 @@ __kernel void SaveLastPos(__constant __read_only int2* pos, __global bool* lastT
 		return;
 	}
 
+    lastPos[x] = (int2)( x1, y1 );
     lastTarget[x] = 1;
 }
 
