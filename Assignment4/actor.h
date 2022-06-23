@@ -68,7 +68,7 @@ class SpriteExplosion : public Actor
 public:
 	SpriteExplosion() = default;
 	SpriteExplosion( Bullet* bullet );
-	bool Tick() { if (++frame == 16) return false; }
+	bool Tick();
 	void Draw() { sprite.DrawAdditive( Map::bitmap, pos, frame - 1 ); }
 	uint GetType() { return Actor::SPRITE_EXPLOSION; }
 	static inline Sprite* anim = 0;

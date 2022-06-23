@@ -145,6 +145,26 @@ public:
 	static inline Buffer* bulletFrameCounterBuffer;
 	static inline Buffer* bulletLastTargetBuffer;
 
+	// spriteExplosion
+	static inline Sprite* spriteExplosionSprite;
+	static inline uint spriteExplosionCounter = 0;
+	static inline uint maxSpriteExplosion = 50;
+
+	static inline int2* spriteExplosionPos;
+	static inline int* spriteExplosionFrame;
+	static inline bool* spriteExplosionLastTarget;
+
+	static inline Kernel* spriteExplosionDrawAdditiveKernel;
+	static inline Kernel* spriteExplosionBackupKernel;
+	static inline Kernel* spriteExplosionSaveLastPosKernel;
+	static inline Kernel* spriteExplosionRemoveKernel;
+
+	static inline Buffer* spriteExplosionSpriteBuffer;
+	static inline Buffer* spriteExplosionBackupBuffer;
+	static inline Buffer* spriteExplosionPosBuffer;
+	static inline Buffer* spriteExplosionFrameBuffer;
+	static inline Buffer* spriteExplosionLastTargetBuffer;
+
 };
 
 } // namespace Tmpl8

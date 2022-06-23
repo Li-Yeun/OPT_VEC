@@ -279,11 +279,35 @@ void ParticleExplosion::Remove()
 SpriteExplosion::SpriteExplosion( Bullet* bullet )
 {
 	// load the static sprite data if it doesn't exist yet
-	if (!anim) anim = new Sprite( "assets/explosion1.png", 16 );
+	if (!anim) anim = MyApp::spriteExplosionSprite;
 	// set member variables
 	sprite = SpriteInstance( anim );
 	pos = bullet->pos;
 	frame = 0;
+	if (MyApp::spriteExplosionCounter >= MyApp::maxSpriteExplosion)
+	{
+		MyApp::spriteExplosionCounter = 0;
+	}
+	id = MyApp::spriteExplosionCounter;
+
+	MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
+	MyApp::spriteExplosionFrame[id] = frame;
+	MyApp::spriteExplosionLastTarget[id] = 0;
+
+	MyApp::spriteExplosionCounter += 1;
+
+}
+bool SpriteExplosion::Tick()
+{
+	if (++frame == 16)
+	{
+		pos = make_float2(-100, -100);
+		MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
+		MyApp::spriteExplosionFrame[id] = frame;
+		return false;
+	}
+
+	MyApp::spriteExplosionFrame[id] = frame;
 }
 
 // Fast dust code by George Psomathianos

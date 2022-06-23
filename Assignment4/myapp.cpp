@@ -186,6 +186,18 @@ void MyApp::Init()
 	std::copy(flashSprite->pixels, flashSprite->pixels + flash_sprite_size, bullet_sprites);
 	std::copy(bulletSprite->pixels, bulletSprite->pixels + bullet_sprite_size, bullet_sprites + flash_sprite_size);
 
+
+	// Sprite Explosion
+	spriteExplosionSprite = new Sprite("assets/explosion1.png", 16);
+	int spriteExplosion_sprite_size = spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize * spriteExplosionSprite->frameCount;
+
+	uint* spriteExplosion_sprites = new uint[spriteExplosion_sprite_size];
+	std::copy(spriteExplosionSprite->pixels, spriteExplosionSprite->pixels + spriteExplosion_sprite_size, spriteExplosion_sprites);
+
+	spriteExplosionPos = new int2[maxSpriteExplosion]{ int2{-1,-1} };
+	spriteExplosionFrame = new int[maxSpriteExplosion] {-1};
+	spriteExplosionLastTarget = new bool[maxSpriteExplosion] {false};
+
 	// initialize map view
 	map.UpdateView(screen, zoom);
 
@@ -445,6 +457,50 @@ void MyApp::Init()
 	bulletRemoveKernel->SetArgument(2, bulletBackupBuffer);
 	bulletRemoveKernel->SetArgument(3, bulletLastTargetBuffer);
 	bulletRemoveKernel->SetArgument(4, bulletSprite->frameSize);
+
+	// spriteExplosion
+	spriteExplosionDrawAdditiveKernel = new Kernel("Kernels/spriteExplosion.cl", "DrawAdditive");
+
+	spriteExplosionSpriteBuffer = new Buffer(spriteExplosion_sprite_size, CL_MEM_READ_ONLY, spriteExplosion_sprites);
+	spriteExplosionPosBuffer = new Buffer(maxSpriteExplosion * 2, CL_MEM_READ_ONLY, spriteExplosionPos);
+	spriteExplosionFrameBuffer = new Buffer(maxSpriteExplosion, CL_MEM_READ_ONLY, spriteExplosionFrame);
+
+	spriteExplosionDrawAdditiveKernel->SetArgument(0, deviceBuffer);
+	spriteExplosionDrawAdditiveKernel->SetArgument(1, spriteExplosionSpriteBuffer);
+	spriteExplosionDrawAdditiveKernel->SetArgument(2, spriteExplosionPosBuffer);
+	spriteExplosionDrawAdditiveKernel->SetArgument(3, spriteExplosionFrameBuffer);
+	spriteExplosionDrawAdditiveKernel->SetArgument(4, spriteExplosionSprite->frameSize);
+	spriteExplosionDrawAdditiveKernel->SetArgument(5, spriteExplosionSprite->frameCount);
+
+	spriteExplosionSpriteBuffer->CopyToDevice(true);
+	spriteExplosionPosBuffer->CopyToDevice(true);
+	spriteExplosionFrameBuffer->CopyToDevice(true);
+
+	spriteExplosionBackupKernel = new Kernel("Kernels/spriteExplosion.cl", "Backup");
+
+	spriteExplosionBackupBuffer = new Buffer(maxSpriteExplosion * spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize);
+	spriteExplosionLastTargetBuffer = new Buffer(maxSpriteExplosion / 4, 0, spriteExplosionLastTarget);
+
+	spriteExplosionBackupKernel->SetArgument(0, deviceBuffer);
+	spriteExplosionBackupKernel->SetArgument(1, spriteExplosionPosBuffer);
+	spriteExplosionBackupKernel->SetArgument(2, spriteExplosionBackupBuffer);
+	spriteExplosionBackupKernel->SetArgument(3, spriteExplosionLastTargetBuffer);
+	spriteExplosionBackupKernel->SetArgument(4, spriteExplosionSprite->frameSize);
+
+	spriteExplosionLastTargetBuffer->CopyToDevice(true);
+
+	spriteExplosionSaveLastPosKernel = new Kernel("Kernels/spriteExplosion.cl", "SaveLastPos");
+
+	spriteExplosionSaveLastPosKernel->SetArgument(0, spriteExplosionPosBuffer);
+	spriteExplosionSaveLastPosKernel->SetArgument(1, spriteExplosionLastTargetBuffer);
+	spriteExplosionSaveLastPosKernel->SetArgument(2, spriteExplosionSprite->frameSize);
+
+	spriteExplosionRemoveKernel = new Kernel("Kernels/spriteExplosion.cl", "Remove");
+	spriteExplosionRemoveKernel->SetArgument(0, deviceBuffer);
+	spriteExplosionRemoveKernel->SetArgument(1, spriteExplosionPosBuffer);
+	spriteExplosionRemoveKernel->SetArgument(2, spriteExplosionBackupBuffer);
+	spriteExplosionRemoveKernel->SetArgument(3, spriteExplosionLastTargetBuffer);
+	spriteExplosionRemoveKernel->SetArgument(4, spriteExplosionSprite->frameSize);
 }
 
 // -----------------------------------------------------------
@@ -509,6 +565,7 @@ void MyApp::Tick( float deltaTime )
 	{
 		bushRemoveKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
 	}
+	spriteExplosionRemoveKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
 	bulletRemoveKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
 	flagRemoveKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(2, totalFlags));
 	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
@@ -542,7 +599,10 @@ void MyApp::Tick( float deltaTime )
 
 	bulletPosBuffer->CopyToDevice(false);
 	bulletFrameBuffer->CopyToDevice(false);
-	bulletFrameCounterBuffer->CopyToDevice(true);
+	bulletFrameCounterBuffer->CopyToDevice(false);
+
+	spriteExplosionPosBuffer->CopyToDevice(false);
+	spriteExplosionFrameBuffer->CopyToDevice(true);
 
 	tankTrackKernel->Run(totalTanks);
 
@@ -557,6 +617,9 @@ void MyApp::Tick( float deltaTime )
 	bulletSaveLastPosKernel->Run(maxBullets);
 	bulletDrawKernel->Run2D(int2((bulletSprite->frameSize - 1) * (bulletSprite->frameSize - 1), maxBullets), int2(bulletSprite->frameSize - 1, 1));
 
+	spriteExplosionBackupKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
+	spriteExplosionSaveLastPosKernel->Run(maxSpriteExplosion);
+	spriteExplosionDrawAdditiveKernel->Run2D(int2((spriteExplosionSprite->frameSize) * (spriteExplosionSprite->frameSize), maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
 	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 	//int2 cursorPos = map.ScreenToMap(mousePos);
 
