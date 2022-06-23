@@ -592,6 +592,7 @@ void MyApp::Init()
 	particleExplosionRemoveKernel->SetArgument(2, particleExplosionMaxPosBuffer);
 	particleExplosionRemoveKernel->SetArgument(3, particleMaxTotalPos);
 	particleExplosionRemoveKernel->SetArgument(4, particleExplosionBackupBuffer);
+
 	t.reset();
 }
 
@@ -638,18 +639,10 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick(float deltaTime)
 {
-	/*
-	deviceBuffer->CopyFromDevice(false);
-	tankDrawKernel->Run(1);
-	*/
-
-	// draw the map
-	//map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();
 	grid.Populate(actorPool);
-	// update and render actors
-	// pointer->Remove();
+
 	isBullet = false;
 	isSpriteExplosion = false;
 	isParticleExplosion = false;
@@ -694,10 +687,6 @@ void MyApp::Tick(float deltaTime)
 	bulletRemoveKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
 	flagRemoveKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(2, totalFlags));
 	tankRemoveKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
-
-	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
-	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
-	// 
 
 	tankPosBuffer->CopyToDevice(false);
 	tankFrameBuffer->CopyToDevice(false);
@@ -766,8 +755,6 @@ void MyApp::Tick(float deltaTime)
 	}
 	pointerRemoveKernel->SetArgument(2, pointer->lastPos);
 	
-	//pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
-
 	// bush draw
 	for (int i = 0; i < 3; i++)
 		bushBackupKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
