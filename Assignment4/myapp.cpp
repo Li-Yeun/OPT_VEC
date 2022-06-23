@@ -636,7 +636,7 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 // Main application tick function - Executed once per frame
 // -----------------------------------------------------------
-void MyApp::Tick( float deltaTime )
+void MyApp::Tick(float deltaTime)
 {
 	/*
 	deviceBuffer->CopyFromDevice(false);
@@ -647,19 +647,30 @@ void MyApp::Tick( float deltaTime )
 	//map.Draw( screen );
 	// rebuild actor grid
 	grid.Clear();
-	grid.Populate( actorPool );
+	grid.Populate(actorPool);
 	// update and render actors
 	// pointer->Remove();
+	isBullet = false;
+	isSpriteExplosion = false;
+	isParticleExplosion = false;
+
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
-	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
-	{
-		// actor got deleted, replace by last in list
-		Actor* lastActor = actorPool.back();
-		Actor* toDelete = actorPool[i];
-		actorPool.pop_back();
-		if (lastActor != toDelete) actorPool[i] = lastActor;
-		delete toDelete;
-		i--;
+	for (int i = 0; i < (int)actorPool.size(); i++) {
+
+		isBullet = isBullet || (actorPool[i]->GetType() == Actor::BULLET);
+		isSpriteExplosion = isSpriteExplosion || (actorPool[i]->GetType() == Actor::SPRITE_EXPLOSION);
+		isParticleExplosion = isParticleExplosion || (actorPool[i]->GetType() == Actor::PARTICLE_EXPLOSION);
+
+		if (!actorPool[i]->Tick())
+		{
+			// actor got deleted, replace by last in list
+			Actor* lastActor = actorPool.back();
+			Actor* toDelete = actorPool[i];
+			actorPool.pop_back();
+			if (lastActor != toDelete) actorPool[i] = lastActor;
+			delete toDelete;
+			i--;
+		}
 	}
 	coolDown++;
 
@@ -696,21 +707,6 @@ void MyApp::Tick( float deltaTime )
 
 	flagPosBuffer->CopyToDevice(false);
 
-	bulletPosBuffer->CopyToDevice(false);
-	bulletFrameBuffer->CopyToDevice(false);
-	bulletFrameCounterBuffer->CopyToDevice(false);
-
-	spriteExplosionPosBuffer->CopyToDevice(false);
-	spriteExplosionFrameBuffer->CopyToDevice(false);
-
-	particleExplosionPosBuffer->CopyToDevice(false);
-	//hoeft niet altijd aangeroepen te worden
-	particleExplosionMaxPosBuffer->CopyToDevice(false);
-	particleExplosionColorBuffer->CopyToDevice(false);
-	particleExplosionFadeBuffer->CopyToDevice(false);
-
-
-
 	tankTrackKernel->Run(totalTanks);
 
 	tankBackupKernel->Run2D(int2(tank1->frameSize * tank1->frameSize, totalTanks), int2(tank1->frameSize, 1));
@@ -720,16 +716,37 @@ void MyApp::Tick( float deltaTime )
 	flagBackupKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(totalFlags, 1));
 	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 
-	bulletBackupKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
-	bulletSaveLastPosKernel->Run(maxBullets);
-	bulletDrawKernel->Run2D(int2((bulletSprite->frameSize - 1) * (bulletSprite->frameSize - 1), maxBullets), int2(bulletSprite->frameSize - 1, 1));
+	if (isBullet) {
+		bulletPosBuffer->CopyToDevice(false);
+		bulletFrameBuffer->CopyToDevice(false);
+		bulletFrameCounterBuffer->CopyToDevice(false);
 
-	spriteExplosionBackupKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
-	spriteExplosionSaveLastPosKernel->Run(maxSpriteExplosion);
-	spriteExplosionDrawAdditiveKernel->Run2D(int2((spriteExplosionSprite->frameSize) * (spriteExplosionSprite->frameSize), maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
+		bulletBackupKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
+		bulletSaveLastPosKernel->Run(maxBullets);
+		bulletDrawKernel->Run2D(int2((bulletSprite->frameSize - 1) * (bulletSprite->frameSize - 1), maxBullets), int2(bulletSprite->frameSize - 1, 1));
 
-	particleExplosionBackupKernel->Run2D(int2(particleMaxTotalPos * 4, maxParticleExplosion), int2(particleMaxTotalPos, 1));
-	particleExplosionDrawKernel->Run2D(int2(particleMaxTotalPos, maxParticleExplosion), int2(particleMaxTotalPos, 1));
+	}
+	if (isSpriteExplosion)
+	{
+		spriteExplosionPosBuffer->CopyToDevice(false);
+		spriteExplosionFrameBuffer->CopyToDevice(false);
+
+		spriteExplosionBackupKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
+		spriteExplosionSaveLastPosKernel->Run(maxSpriteExplosion);
+		spriteExplosionDrawAdditiveKernel->Run2D(int2((spriteExplosionSprite->frameSize) * (spriteExplosionSprite->frameSize), maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
+	}
+
+	if (isParticleExplosion)
+	{
+		particleExplosionPosBuffer->CopyToDevice(false);
+		//hoeft niet altijd aangeroepen te worden
+		particleExplosionMaxPosBuffer->CopyToDevice(false);
+		particleExplosionColorBuffer->CopyToDevice(false);
+		particleExplosionFadeBuffer->CopyToDevice(false);
+
+		particleExplosionBackupKernel->Run2D(int2(particleMaxTotalPos * 4, maxParticleExplosion), int2(particleMaxTotalPos, 1));
+		particleExplosionDrawKernel->Run2D(int2(particleMaxTotalPos, maxParticleExplosion), int2(particleMaxTotalPos, 1));
+	}
 
 	int2 cursorPos = map.ScreenToMap(mousePos);
 	pointer->lastPos = cursorPos;

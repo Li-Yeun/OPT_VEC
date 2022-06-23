@@ -147,6 +147,8 @@ public:
 	static inline Buffer* bulletFrameCounterBuffer;
 	static inline Buffer* bulletLastTargetBuffer;
 
+	static inline bool isBullet = false;
+
 	// spriteExplosion
 	static inline Sprite* spriteExplosionSprite;
 	static inline uint spriteExplosionCounter = 0;
@@ -169,6 +171,8 @@ public:
 	static inline Buffer* spriteExplosionFrameBuffer;
 	static inline Buffer* spriteExplosionLastTargetBuffer;
 
+	static inline bool isSpriteExplosion = false;
+
 	// particleExplosion
 	static inline uint particleExplosionCounter = 0;
 	static inline uint maxParticleExplosion = 50;
@@ -190,6 +194,7 @@ public:
 	static inline Buffer* particleExplosionColorBuffer;
 	static inline Buffer* particleExplosionFadeBuffer;
 
+	static inline bool isParticleExplosion = false;
 };
 
 } // namespace Tmpl8
