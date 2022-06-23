@@ -199,6 +199,43 @@ void MyApp::Init()
 	spriteExplosionFrame = new int[maxSpriteExplosion] {-1};
 	spriteExplosionLastTarget = new bool[maxSpriteExplosion] {false};
 
+
+	// Particle Explosion
+	particleMaxTotalPos = 0;
+
+	uint size = tank1->frameSize;
+	uint stride = tank1->frameSize * tank1->frameCount;
+
+	// calculate max backup size for particle Explosion
+	for (int u = 0; u < tank1->frameCount; u++)
+	{
+		uint* src = tank1->pixels + u * size;
+		uint* src2 = tank2->pixels + u * size;
+		int temp = 0;
+		int temp2 = 0;
+		for (uint y = 0; y < size; y++) for (uint x = 0; x < size; x++)
+		{
+			uint pixel = src[x + y * stride];
+			uint alpha = pixel >> 24;
+			if (alpha > 64) {temp+=2; }
+			pixel = src2[x + y * stride];
+			alpha = pixel >> 24;
+			if (alpha > 64) { temp2 += 2; }
+		}
+		if (temp > particleMaxTotalPos)
+		{
+			particleMaxTotalPos = temp;
+		}
+		if (temp2 > particleMaxTotalPos)
+		{
+			particleMaxTotalPos = temp2;
+		}
+	}
+	particleExplosionMaxPos = new uint[maxParticleExplosion] {0};
+	particleExplosionFade = new uint[maxParticleExplosion]{ 0 };
+	particleExplosionPos = new int2[maxParticleExplosion * particleMaxTotalPos]{ int2{-1,-1} };
+	particleExplosionColor = new uint[maxParticleExplosion * particleMaxTotalPos] { 0 };
+
 	// initialize map view
 	map.UpdateView(screen, zoom);
 
@@ -518,6 +555,44 @@ void MyApp::Init()
 	spriteExplosionRemoveKernel->SetArgument(2, spriteExplosionBackupBuffer);
 	spriteExplosionRemoveKernel->SetArgument(3, spriteExplosionLastTargetBuffer);
 	spriteExplosionRemoveKernel->SetArgument(4, spriteExplosionSprite->frameSize);
+
+	// particleExplosion
+	particleExplosionDrawKernel = new Kernel("Kernels/particleExplosion.cl", "Draw");
+
+	particleExplosionPosBuffer =  new Buffer(maxParticleExplosion * particleMaxTotalPos * 2, CL_MEM_READ_ONLY, particleExplosionPos);
+	particleExplosionMaxPosBuffer = new Buffer(maxParticleExplosion, CL_MEM_READ_ONLY, particleExplosionMaxPos);
+	particleExplosionColorBuffer = new Buffer(maxParticleExplosion * particleMaxTotalPos , CL_MEM_READ_ONLY, particleExplosionColor);
+	particleExplosionFadeBuffer = new Buffer(maxParticleExplosion * particleMaxTotalPos, CL_MEM_READ_ONLY, particleExplosionFade);
+
+	particleExplosionDrawKernel->SetArgument(0, deviceBuffer);
+	particleExplosionDrawKernel->SetArgument(1, particleExplosionPosBuffer);
+	particleExplosionDrawKernel->SetArgument(2, particleExplosionMaxPosBuffer);
+	particleExplosionDrawKernel->SetArgument(3, particleMaxTotalPos);
+	particleExplosionDrawKernel->SetArgument(4, particleExplosionColorBuffer);
+	particleExplosionDrawKernel->SetArgument(5, particleExplosionFadeBuffer);
+
+	particleExplosionPosBuffer->CopyToDevice(true);
+	particleExplosionMaxPosBuffer->CopyToDevice(true);
+	particleExplosionColorBuffer->CopyToDevice(true);
+	particleExplosionFadeBuffer->CopyToDevice(true);
+
+	particleExplosionBackupKernel = new Kernel("Kernels/particleExplosion.cl", "Backup");
+
+	particleExplosionBackupBuffer = new Buffer(maxParticleExplosion * particleMaxTotalPos * 4);
+
+	particleExplosionBackupKernel->SetArgument(0, deviceBuffer);
+	particleExplosionBackupKernel->SetArgument(1, particleExplosionPosBuffer);
+	particleExplosionBackupKernel->SetArgument(2, particleExplosionMaxPosBuffer);
+	particleExplosionBackupKernel->SetArgument(3, particleMaxTotalPos);
+	particleExplosionBackupKernel->SetArgument(4, particleExplosionBackupBuffer);
+
+	particleExplosionRemoveKernel = new Kernel("Kernels/particleExplosion.cl", "Remove");
+	particleExplosionRemoveKernel->SetArgument(0, deviceBuffer);
+	particleExplosionRemoveKernel->SetArgument(1, particleExplosionPosBuffer);
+	particleExplosionRemoveKernel->SetArgument(2, particleExplosionMaxPosBuffer);
+	particleExplosionRemoveKernel->SetArgument(3, particleMaxTotalPos);
+	particleExplosionRemoveKernel->SetArgument(4, particleExplosionBackupBuffer);
+
 }
 
 // -----------------------------------------------------------
@@ -582,6 +657,7 @@ void MyApp::Tick( float deltaTime )
 	{
 		bushRemoveKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
 	}
+	particleExplosionRemoveKernel->Run2D(int2(particleMaxTotalPos * 4, maxParticleExplosion), int2(particleMaxTotalPos, 1));
 	spriteExplosionRemoveKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
 	bulletRemoveKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
 	flagRemoveKernel->Run2D(int2(flagBackupOffset, totalFlags), int2(2, totalFlags));
@@ -619,7 +695,15 @@ void MyApp::Tick( float deltaTime )
 	bulletFrameCounterBuffer->CopyToDevice(false);
 
 	spriteExplosionPosBuffer->CopyToDevice(false);
-	spriteExplosionFrameBuffer->CopyToDevice(true);
+	spriteExplosionFrameBuffer->CopyToDevice(false);
+
+	particleExplosionPosBuffer->CopyToDevice(false);
+	//hoeft niet altijd aangeroepen te worden
+	particleExplosionMaxPosBuffer->CopyToDevice(false);
+	particleExplosionColorBuffer->CopyToDevice(false);
+	particleExplosionFadeBuffer->CopyToDevice(true);
+
+
 
 	tankTrackKernel->Run(totalTanks);
 
@@ -637,7 +721,10 @@ void MyApp::Tick( float deltaTime )
 	spriteExplosionBackupKernel->Run2D(int2(spriteExplosionSprite->frameSize * spriteExplosionSprite->frameSize, maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
 	spriteExplosionSaveLastPosKernel->Run(maxSpriteExplosion);
 	spriteExplosionDrawAdditiveKernel->Run2D(int2((spriteExplosionSprite->frameSize) * (spriteExplosionSprite->frameSize), maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
-	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
+
+	particleExplosionBackupKernel->Run2D(int2(particleMaxTotalPos * 4, maxParticleExplosion), int2(particleMaxTotalPos, 1));
+	particleExplosionDrawKernel->Run2D(int2(particleMaxTotalPos, maxParticleExplosion), int2(particleMaxTotalPos, 1));
+
 	int2 cursorPos = map.ScreenToMap(mousePos);
 	pointer->lastPos = cursorPos;
 	if (!pointerLastTarget) 

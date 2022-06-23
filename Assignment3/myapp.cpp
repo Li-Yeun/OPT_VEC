@@ -370,7 +370,7 @@ void MyApp::Tick( float deltaTime )
 	// report frame time
 	static float frameTimeAvg = 10.0f; // estimate
 	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	printf("frame time: %5.2fms\n", frameTimeAvg);
+	//printf("frame time: %5.2fms\n", frameTimeAvg);
 
 	
 }

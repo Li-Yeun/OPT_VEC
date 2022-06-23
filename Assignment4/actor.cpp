@@ -208,11 +208,19 @@ void Bullet::Draw()
 // ParticleExplosion constructor
 ParticleExplosion::ParticleExplosion( Tank* tank )
 {
+	if (MyApp::particleExplosionCounter >= MyApp::maxParticleExplosion)
+	{
+		MyApp::particleExplosionCounter = 0;
+	}
+	id = MyApp::particleExplosionCounter;
+
 	// read the pixels from the sprite of the specified tank
 	Sprite* sprite = tank->sprite.sprite;
 	uint size = sprite->frameSize;
 	uint stride = sprite->frameSize * sprite->frameCount;
 	uint* src = sprite->pixels + tank->frame * size;
+
+	uint counter = 0;
 	for (uint y = 0; y < size; y++) for (uint x = 0; x < size; x++)
 	{
 		uint pixel = src[x + y * stride];
@@ -224,8 +232,20 @@ ParticleExplosion::ParticleExplosion( Tank* tank )
 			float fy = tank->pos.y - size * 0.5f + y;
 			pos.push_back( make_float2( fx, fy ) );
 			dir.push_back( make_float2( 0, 0 ) );
+			MyApp::particleExplosionPos[counter + id * MyApp::particleMaxTotalPos] = make_int2(fx, fy);
+			MyApp::particleExplosionColor[counter + id * MyApp::particleMaxTotalPos] = pixel & 0xffffff;
+			counter++;
 		}
 	}
+
+	MyApp::particleExplosionMaxPos[id] = pos.size();
+	MyApp::particleExplosionFade[id] = fade;
+	//MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
+	//MyApp::spriteExplosionLastPos[id] = make_int2(pos.x, pos.y);
+	//MyApp::spriteExplosionFrame[id] = frame;
+	//MyApp::spriteExplosionLastTarget[id] = 0;
+
+	MyApp::particleExplosionCounter += 1;
 }
 
 // ParticleExplosion Draw
@@ -256,9 +276,19 @@ bool ParticleExplosion::Tick()
 		pos[i] += dir[i];
 		// adjust dir randomly
 		dir[i] -= make_float2( RandomFloat() * 0.05f + 0.02f, RandomFloat() * 0.02f - 0.01f );
+		MyApp::particleExplosionPos[i + id * MyApp::particleMaxTotalPos] = make_int2(pos[i].x, pos[i].y);
 	}
 	// fadeout and kill actor when completely faded out
-	if (fade-- == 0) return false; else return true;
+	if (fade-- == 0)
+	{
+		MyApp::particleExplosionFade[id] = fade;
+		return false;
+	}
+	else
+	{
+		MyApp::particleExplosionFade[id] = fade;
+		return true; 
+	}
 }
 
 // ParticleExplosion 'undraw'

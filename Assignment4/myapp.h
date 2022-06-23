@@ -169,6 +169,27 @@ public:
 	static inline Buffer* spriteExplosionFrameBuffer;
 	static inline Buffer* spriteExplosionLastTargetBuffer;
 
+	// particleExplosion
+	static inline uint particleExplosionCounter = 0;
+	static inline uint maxParticleExplosion = 50;
+	static inline int particleMaxTotalPos;
+
+	static inline uint* particleExplosionColor;
+	static inline int2* particleExplosionPos;
+	static inline uint* particleExplosionMaxPos;
+	static inline uint* particleExplosionFade;
+
+
+	static inline Kernel* particleExplosionDrawKernel;
+	static inline Kernel* particleExplosionBackupKernel;
+	static inline Kernel* particleExplosionRemoveKernel;
+
+	static inline Buffer* particleExplosionBackupBuffer;
+	static inline Buffer* particleExplosionPosBuffer;
+	static inline Buffer* particleExplosionMaxPosBuffer;
+	static inline Buffer* particleExplosionColorBuffer;
+	static inline Buffer* particleExplosionFadeBuffer;
+
 };
 
 } // namespace Tmpl8
