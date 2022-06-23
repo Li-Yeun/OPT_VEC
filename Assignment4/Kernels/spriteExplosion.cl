@@ -89,5 +89,14 @@ __kernel void DrawAdditive( __global uint* pixels, __global __read_only uint* sp
 
 	// draw the sprite frame
     int dst = x1 + u + (y1 + v) * MAP_WIDTH;
-    pixels[dst] = AddBlend( pixels[dst], spritePixels[(frame[y] - 1) * spriteFrameSize + u + v  * spriteFrameCount * spriteFrameSize]);
+
+    // Get old pixel from a nonsense automic operation
+    uint oldpixel = atomic_add(pixels + dst, 0);
+    // Keep trying to write to the buffer until the buffer held the same pixel you read before.
+    while (true) {
+        uint newoldpixel = atomic_cmpxchg(pixels + dst, oldpixel, AddBlend( oldpixel, spritePixels[(frame[y] - 1) * spriteFrameSize + u + v  * spriteFrameCount * spriteFrameSize]));
+        if (newoldpixel == oldpixel) break;
+        else oldpixel = newoldpixel;
+    }
+    //pixels[dst] = AddBlend( pixels[dst], spritePixels[(frame[y] - 1) * spriteFrameSize + u + v  * spriteFrameCount * spriteFrameSize]);
 }

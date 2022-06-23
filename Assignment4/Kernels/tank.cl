@@ -109,5 +109,13 @@ __kernel void Draw(__global uint* pixels, __global __read_only uint* spritePixel
 
     uint alpha = pix >> 24;
     
-    pixels[dst] = ScaleColor( pix, alpha ) + ScaleColor( pixels[dst], 255 - alpha );
+    //pixels[dst] = ScaleColor( pix, alpha ) + ScaleColor( pixels[dst], 255 - alpha );
+    // Get old pixel from a nonsense automic operation
+    uint oldpixel = atomic_add(pixels + dst, 0);
+    // Keep trying to write to the buffer until the buffer held the same pixel you read before.
+    while (true) {
+        uint newoldpixel = atomic_cmpxchg(pixels + dst, oldpixel, ScaleColor(pix, alpha) + ScaleColor(oldpixel, 255 - alpha));
+        if (newoldpixel == oldpixel) break;
+        else oldpixel = newoldpixel;
+    }
 }

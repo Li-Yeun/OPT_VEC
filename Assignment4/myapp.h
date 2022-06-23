@@ -42,7 +42,9 @@ public:
 
 	//Pointer
 	static inline Kernel* pointerDrawKernel;
-
+	static inline Kernel* pointerRemoveKernel;
+	int pointerLastTarget = 0;
+	static inline Buffer* pointerBackupBuffer;
 	static inline Buffer* pointerSpriteBuffer;
 
 	// tanks

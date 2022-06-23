@@ -206,6 +206,7 @@ void MyApp::Init()
 	tankDrawKernel = new Kernel("Kernels/tank.cl", "Draw");
 
 	pointerDrawKernel = new Kernel("Kernels/pointer.cl", "Draw");
+	pointerBackupBuffer = new Buffer(sqr(pointer->sprite->frameSize));
 	pointerSpriteBuffer = new Buffer(pointer->sprite->frameSize * pointer->sprite->frameSize, CL_MEM_READ_ONLY, pointer->sprite->pixels); 
 
 
@@ -213,10 +214,20 @@ void MyApp::Init()
 	screenBuffer = new Buffer(GetRenderTarget()->ID, Buffer::TARGET, 0);
 	screen = 0;
 
-	pointerDrawKernel->SetArgument(0, screenBuffer);
+	pointerDrawKernel->SetArgument(0, deviceBuffer);
 	pointerDrawKernel->SetArgument(1, pointerSpriteBuffer);
 	pointerDrawKernel->SetArgument(2, make_int2(0, 0));
 	pointerDrawKernel->SetArgument(3, pointer->sprite->frameSize);
+	pointerDrawKernel->SetArgument(4, pointerBackupBuffer);
+
+	pointerRemoveKernel = new Kernel("Kernels/pointer.cl", "Remove");
+	pointer->lastPos = make_int2(-20, -20);
+
+	pointerRemoveKernel->SetArgument(0, deviceBuffer);
+	pointerRemoveKernel->SetArgument(1, pointerBackupBuffer);
+	pointerRemoveKernel->SetArgument(2, pointer->lastPos);
+	pointerRemoveKernel->SetArgument(3, pointerLastTarget);
+	pointerRemoveKernel->SetArgument(4, pointer->sprite->frameSize);
 
 	screenKernel = new Kernel("Kernels/screen.cl", "renderToScreen");
 	screenKernel->SetArgument(0, deviceBuffer);
@@ -566,7 +577,7 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	// pointer->Remove();
-
+	pointerRemoveKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
 	for (int i = 0; i < 3; i++)
 	{
 		bushRemoveKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
@@ -627,8 +638,15 @@ void MyApp::Tick( float deltaTime )
 	spriteExplosionSaveLastPosKernel->Run(maxSpriteExplosion);
 	spriteExplosionDrawAdditiveKernel->Run2D(int2((spriteExplosionSprite->frameSize) * (spriteExplosionSprite->frameSize), maxSpriteExplosion), int2(spriteExplosionSprite->frameSize, 1));
 	//flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
-	//int2 cursorPos = map.ScreenToMap(mousePos);
-
+	int2 cursorPos = map.ScreenToMap(mousePos);
+	pointer->lastPos = cursorPos;
+	if (!pointerLastTarget) 
+	{ 
+		pointerLastTarget = 1; 
+		pointerRemoveKernel->SetArgument(3, pointerLastTarget);
+	}
+	pointerRemoveKernel->SetArgument(2, pointer->lastPos);
+	
 	//pointer->Draw(map.bitmap, make_float2(cursorPos), 0);
 
 	// bush draw
@@ -637,6 +655,9 @@ void MyApp::Tick( float deltaTime )
 
 	bushSaveLastPosKernel->Run(totalBushes);
 	bushDrawKernel->Run2D(int2((max_bush_frameSize - 1) * (max_bush_frameSize - 1), totalBushes), int2(max_bush_frameSize - 1, 1));
+	pointerDrawKernel->SetArgument(2, cursorPos);
+	pointerDrawKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
+	
 	clFinish(Kernel::GetQueue());
 	screenKernel->SetArgument(2, map.view);
 	screenKernel->SetArgument(3, map.dxy);
@@ -644,8 +665,7 @@ void MyApp::Tick( float deltaTime )
 	
 
 	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
-	pointerDrawKernel->SetArgument(2, mousePos);
-	pointerDrawKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
+
 	clFinish(Kernel::GetQueue());
 	//deviceBuffer->CopyFromDevice(true);
 	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
