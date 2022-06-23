@@ -286,12 +286,12 @@ void MyApp::Init()
 	tankDrawKernel->SetArgument(6, tank1->frameCount);
 
 
-	deviceBuffer->CopyToDevice(true);
-	tankSpriteBuffer->CopyToDevice(true);
-	pointerSpriteBuffer->CopyToDevice(true);
-	tankTeamBuffer->CopyToDevice(true);
-	tankPosBuffer->CopyToDevice(true);
-	tankFrameBuffer->CopyToDevice(true);
+	deviceBuffer->CopyToDevice(false);
+	tankSpriteBuffer->CopyToDevice(false);
+	pointerSpriteBuffer->CopyToDevice(false);
+	tankTeamBuffer->CopyToDevice(false);
+	tankPosBuffer->CopyToDevice(false);
+	tankFrameBuffer->CopyToDevice(false);
 
 
 	tankBackupKernel = new Kernel("Kernels/tank.cl", "Backup");
@@ -305,7 +305,7 @@ void MyApp::Init()
 	tankBackupKernel->SetArgument(3, tankLastTargetBuffer);
 	tankBackupKernel->SetArgument(4, tank1->frameSize);
 
-	tankLastTargetBuffer->CopyToDevice(true);
+	tankLastTargetBuffer->CopyToDevice(false);
 
 
 	tankSaveLastPosKernel = new Kernel("Kernels/tank.cl", "SaveLastPos");
@@ -317,7 +317,7 @@ void MyApp::Init()
 	tankSaveLastPosKernel->SetArgument(2, tankLastTargetBuffer);
 	tankSaveLastPosKernel->SetArgument(3, tank1->frameSize);
 
-	tankLastPosBuffer->CopyToDevice(true);
+	tankLastPosBuffer->CopyToDevice(false);
 
 	tankRemoveKernel = new Kernel("Kernels/tank.cl", "Remove");
 	tankRemoveKernel->SetArgument(0, deviceBuffer);
@@ -338,9 +338,9 @@ void MyApp::Init()
 	tankTrackKernel->SetArgument(2, tankDirBuffer);
 	tankTrackKernel->SetArgument(3, tankSteerBuffer);
 
-	tankOldPosBuffer->CopyToDevice(true);
-	tankDirBuffer->CopyToDevice(true);
-	tankSteerBuffer->CopyToDevice(true);
+	tankOldPosBuffer->CopyToDevice(false);
+	tankDirBuffer->CopyToDevice(false);
+	tankSteerBuffer->CopyToDevice(false);
 
 	// Bushes
 	bushDrawKernel = new Kernel("Kernels/bush.cl", "Draw");
@@ -362,12 +362,12 @@ void MyApp::Init()
 	bushDrawKernel->SetArgument(6, bushSpriteOffsetBuffer);
 	bushDrawKernel->SetArgument(7, 256);
 
-	bushSpriteBuffer->CopyToDevice(true);
-	bushTypeBuffer->CopyToDevice(true);
-	bushPosBuffer->CopyToDevice(true);
-	bushFrameBuffer->CopyToDevice(true);
-	bushFrameSizeBuffer->CopyToDevice(true);
-	bushSpriteOffsetBuffer->CopyToDevice(true);
+	bushSpriteBuffer->CopyToDevice(false);
+	bushTypeBuffer->CopyToDevice(false);
+	bushPosBuffer->CopyToDevice(false);
+	bushFrameBuffer->CopyToDevice(false);
+	bushFrameSizeBuffer->CopyToDevice(false);
+	bushSpriteOffsetBuffer->CopyToDevice(false);
 
 
 	bushLastTargetBuffer = new Buffer(totalBushes / 4, 0, bushLastTarget);
@@ -383,9 +383,9 @@ void MyApp::Init()
 		bushBackupKernel[i]->SetArgument(4, bushTypeIndexBuffer[i]);
 		bushBackupKernel[i]->SetArgument(5, bush[i]->frameSize);
 
-		bushTypeIndexBuffer[i]->CopyToDevice(true);
+		bushTypeIndexBuffer[i]->CopyToDevice(false);
 	}
-	bushLastTargetBuffer->CopyToDevice(true);
+	bushLastTargetBuffer->CopyToDevice(false);
 
 
 	bushSaveLastPosKernel = new Kernel("Kernels/bush.cl", "SaveLastPos");
@@ -398,7 +398,7 @@ void MyApp::Init()
 	bushSaveLastPosKernel->SetArgument(3, bushTypeBuffer);
 	bushSaveLastPosKernel->SetArgument(4, bushFrameSizeBuffer);
 
-	bushLastPosBuffer->CopyToDevice(true);
+	bushLastPosBuffer->CopyToDevice(false);
 
 	for (int i = 0; i < 3; i++) {
 		bushRemoveKernel[i] = new Kernel("Kernels/bush.cl", "Remove");
@@ -423,8 +423,8 @@ void MyApp::Init()
 	flagDrawKernel->SetArgument(4, flagPattern->height);
 	flagDrawKernel->SetArgument(5, flagPosOffset);
 
-	flagSpriteBuffer->CopyToDevice(true);
-	flagPosBuffer->CopyToDevice(true);
+	flagSpriteBuffer->CopyToDevice(false);
+	flagPosBuffer->CopyToDevice(false);
 
 	flagBackupKernel = new Kernel("Kernels/flag.cl", "Backup");
 
@@ -470,10 +470,10 @@ void MyApp::Init()
 	bulletDrawKernel->SetArgument(4, bulletSprite->frameSize);
 	bulletDrawKernel->SetArgument(5, bulletFrameCounterBuffer);
 
-	bulletSpriteBuffer->CopyToDevice(true);
-	bulletPosBuffer->CopyToDevice(true);
-	bulletFrameBuffer->CopyToDevice(true);
-	bulletFrameCounterBuffer->CopyToDevice(true);
+	bulletSpriteBuffer->CopyToDevice(false);
+	bulletPosBuffer->CopyToDevice(false);
+	bulletFrameBuffer->CopyToDevice(false);
+	bulletFrameCounterBuffer->CopyToDevice(false);
 
 	bulletBackupKernel = new Kernel("Kernels/bullet.cl", "Backup");
 
@@ -486,7 +486,7 @@ void MyApp::Init()
 	bulletBackupKernel->SetArgument(3, bulletLastTargetBuffer);
 	bulletBackupKernel->SetArgument(4, bulletSprite->frameSize);
 
-	bulletLastTargetBuffer->CopyToDevice(true);
+	bulletLastTargetBuffer->CopyToDevice(false);
 
 
 	bulletSaveLastPosKernel = new Kernel("Kernels/bullet.cl", "SaveLastPos");
@@ -498,7 +498,7 @@ void MyApp::Init()
 	bulletSaveLastPosKernel->SetArgument(2, bulletLastTargetBuffer);
 	bulletSaveLastPosKernel->SetArgument(3, bulletSprite->frameSize);
 
-	bulletLastPosBuffer->CopyToDevice(true);
+	bulletLastPosBuffer->CopyToDevice(false);
 
 	bulletRemoveKernel = new Kernel("Kernels/bullet.cl", "Remove");
 	bulletRemoveKernel->SetArgument(0, deviceBuffer);
@@ -521,9 +521,9 @@ void MyApp::Init()
 	spriteExplosionDrawAdditiveKernel->SetArgument(4, spriteExplosionSprite->frameSize);
 	spriteExplosionDrawAdditiveKernel->SetArgument(5, spriteExplosionSprite->frameCount);
 
-	spriteExplosionSpriteBuffer->CopyToDevice(true);
-	spriteExplosionPosBuffer->CopyToDevice(true);
-	spriteExplosionFrameBuffer->CopyToDevice(true);
+	spriteExplosionSpriteBuffer->CopyToDevice(false);
+	spriteExplosionPosBuffer->CopyToDevice(false);
+	spriteExplosionFrameBuffer->CopyToDevice(false);
 
 	spriteExplosionBackupKernel = new Kernel("Kernels/spriteExplosion.cl", "Backup");
 
@@ -536,7 +536,7 @@ void MyApp::Init()
 	spriteExplosionBackupKernel->SetArgument(3, spriteExplosionLastTargetBuffer);
 	spriteExplosionBackupKernel->SetArgument(4, spriteExplosionSprite->frameSize);
 
-	spriteExplosionLastTargetBuffer->CopyToDevice(true);
+	spriteExplosionLastTargetBuffer->CopyToDevice(false);
 
 	spriteExplosionSaveLastPosKernel = new Kernel("Kernels/spriteExplosion.cl", "SaveLastPos");
 
@@ -547,7 +547,7 @@ void MyApp::Init()
 	spriteExplosionSaveLastPosKernel->SetArgument(2, spriteExplosionLastTargetBuffer);
 	spriteExplosionSaveLastPosKernel->SetArgument(3, spriteExplosionSprite->frameSize);
 
-	spriteExplosionLastPosBuffer->CopyToDevice(true);
+	spriteExplosionLastPosBuffer->CopyToDevice(false);
 
 	spriteExplosionRemoveKernel = new Kernel("Kernels/spriteExplosion.cl", "Remove");
 	spriteExplosionRemoveKernel->SetArgument(0, deviceBuffer);
@@ -571,9 +571,9 @@ void MyApp::Init()
 	particleExplosionDrawKernel->SetArgument(4, particleExplosionColorBuffer);
 	particleExplosionDrawKernel->SetArgument(5, particleExplosionFadeBuffer);
 
-	particleExplosionPosBuffer->CopyToDevice(true);
-	particleExplosionMaxPosBuffer->CopyToDevice(true);
-	particleExplosionColorBuffer->CopyToDevice(true);
+	particleExplosionPosBuffer->CopyToDevice(false);
+	particleExplosionMaxPosBuffer->CopyToDevice(false);
+	particleExplosionColorBuffer->CopyToDevice(false);
 	particleExplosionFadeBuffer->CopyToDevice(true);
 
 	particleExplosionBackupKernel = new Kernel("Kernels/particleExplosion.cl", "Backup");
