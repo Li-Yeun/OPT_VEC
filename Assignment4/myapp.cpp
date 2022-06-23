@@ -654,6 +654,9 @@ void MyApp::Tick(float deltaTime)
 	isSpriteExplosion = false;
 	isParticleExplosion = false;
 
+	isNewBullet = false;
+	isNewParticleExplosion = false;
+
 	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
 	for (int i = 0; i < (int)actorPool.size(); i++) {
 
@@ -717,8 +720,12 @@ void MyApp::Tick(float deltaTime)
 	flagDrawKernel->Run2D(int2(flagPosOffset, totalFlags), int2(totalFlags, 1));
 
 	if (isBullet) {
+		if (isNewBullet)
+		{
+			bulletFrameBuffer->CopyToDevice(false);
+		}
+
 		bulletPosBuffer->CopyToDevice(false);
-		bulletFrameBuffer->CopyToDevice(false);
 		bulletFrameCounterBuffer->CopyToDevice(false);
 
 		bulletBackupKernel->Run2D(int2(bulletSprite->frameSize * bulletSprite->frameSize, maxBullets), int2(bulletSprite->frameSize, 1));
@@ -738,10 +745,12 @@ void MyApp::Tick(float deltaTime)
 
 	if (isParticleExplosion)
 	{
+		if (isNewParticleExplosion)
+		{
+			particleExplosionMaxPosBuffer->CopyToDevice(false);
+			particleExplosionColorBuffer->CopyToDevice(false);
+		}
 		particleExplosionPosBuffer->CopyToDevice(false);
-		//hoeft niet altijd aangeroepen te worden
-		particleExplosionMaxPosBuffer->CopyToDevice(false);
-		particleExplosionColorBuffer->CopyToDevice(false);
 		particleExplosionFadeBuffer->CopyToDevice(false);
 
 		particleExplosionBackupKernel->Run2D(int2(particleMaxTotalPos * 4, maxParticleExplosion), int2(particleMaxTotalPos, 1));

@@ -148,6 +148,7 @@ public:
 	static inline Buffer* bulletLastTargetBuffer;
 
 	static inline bool isBullet = false;
+	static inline bool isNewBullet = false;
 
 	// spriteExplosion
 	static inline Sprite* spriteExplosionSprite;
@@ -195,6 +196,7 @@ public:
 	static inline Buffer* particleExplosionFadeBuffer;
 
 	static inline bool isParticleExplosion = false;
+	static inline bool isNewParticleExplosion = false;
 };
 
 } // namespace Tmpl8

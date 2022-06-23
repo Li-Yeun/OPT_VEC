@@ -141,6 +141,8 @@ Bullet::Bullet( int2 p, int f, int a)
 	MyApp::bulletFrameCounter[id] = frameCounter;
 	MyApp::bulletLastTarget[id] = 0;
 	MyApp::bulletCounter += 1;
+
+	MyApp::isNewBullet = true;
 }
 
 // Bullet 'undraw': erase previously rendered pixels
@@ -246,6 +248,8 @@ ParticleExplosion::ParticleExplosion( Tank* tank )
 	//MyApp::spriteExplosionLastTarget[id] = 0;
 
 	MyApp::particleExplosionCounter += 1;
+
+	MyApp::isNewParticleExplosion = true;
 }
 
 // ParticleExplosion Draw
