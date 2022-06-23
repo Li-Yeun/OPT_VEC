@@ -9,7 +9,7 @@ TheApp* CreateApp() { return new MyApp(); }
 int totalTanks, tankCounter;
 int totalBushes, max_bush_frameSize;
 int totalFlags, flagPosOffset, flagBackupOffset;
-
+Timer t;
 void MyApp::Init()
 {
 	//std::cout << sizeof(int2) << std::endl;
@@ -592,7 +592,7 @@ void MyApp::Init()
 	particleExplosionRemoveKernel->SetArgument(2, particleExplosionMaxPosBuffer);
 	particleExplosionRemoveKernel->SetArgument(3, particleMaxTotalPos);
 	particleExplosionRemoveKernel->SetArgument(4, particleExplosionBackupBuffer);
-
+	t.reset();
 }
 
 // -----------------------------------------------------------
@@ -638,8 +638,6 @@ void MyApp::HandleInput()
 // -----------------------------------------------------------
 void MyApp::Tick( float deltaTime )
 {
-	Timer t;
-
 	/*
 	deviceBuffer->CopyFromDevice(false);
 	tankDrawKernel->Run(1);
@@ -652,6 +650,26 @@ void MyApp::Tick( float deltaTime )
 	grid.Populate( actorPool );
 	// update and render actors
 	// pointer->Remove();
+	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
+	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
+	{
+		// actor got deleted, replace by last in list
+		Actor* lastActor = actorPool.back();
+		Actor* toDelete = actorPool[i];
+		actorPool.pop_back();
+		if (lastActor != toDelete) actorPool[i] = lastActor;
+		delete toDelete;
+		i--;
+	}
+	coolDown++;
+
+	clFinish(Kernel::GetQueue());
+	// report frame time
+	static float frameTimeAvg = 10.0f; // estimate
+	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
+	printf("frame time: %5.2fms\n", frameTimeAvg);
+	t = Timer();
+
 	pointerRemoveKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
 	for (int i = 0; i < 3; i++)
 	{
@@ -666,18 +684,6 @@ void MyApp::Tick( float deltaTime )
 	//for (int s = (int)sand.size(), i = s - 1; i >= 0; i--) sand[i]->Remove();
 	//for (int s = (int)actorPool.size(), i = s - 1; i >= 0; i--) actorPool[i]->Remove();
 	// 
-	for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Tick();
-	for (int i = 0; i < (int)actorPool.size(); i++) if (!actorPool[i]->Tick())
-	{
-		// actor got deleted, replace by last in list
-		Actor* lastActor = actorPool.back();
-		Actor* toDelete = actorPool[i];
-		actorPool.pop_back();
-		if (lastActor != toDelete) actorPool[i] = lastActor;
-		delete toDelete;
-		i--;
-	}
-	coolDown++;
 
 	tankPosBuffer->CopyToDevice(false);
 	tankFrameBuffer->CopyToDevice(false);
@@ -701,7 +707,7 @@ void MyApp::Tick( float deltaTime )
 	//hoeft niet altijd aangeroepen te worden
 	particleExplosionMaxPosBuffer->CopyToDevice(false);
 	particleExplosionColorBuffer->CopyToDevice(false);
-	particleExplosionFadeBuffer->CopyToDevice(true);
+	particleExplosionFadeBuffer->CopyToDevice(false);
 
 
 
@@ -745,23 +751,12 @@ void MyApp::Tick( float deltaTime )
 	pointerDrawKernel->SetArgument(2, cursorPos);
 	pointerDrawKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
 	
-	clFinish(Kernel::GetQueue());
+	// Write to screen
 	screenKernel->SetArgument(2, map.view);
 	screenKernel->SetArgument(3, map.dxy);
 	
-	
-
 	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
-
-	clFinish(Kernel::GetQueue());
-	//deviceBuffer->CopyFromDevice(true);
-	//for (int s = (int)actorPool.size(), i = 0; i < s; i++) actorPool[i]->Draw();
-	//for (int s = (int)sand.size(), i = 0; i < s; i++) sand[i]->Draw();
 
 	// handle mouse
 	HandleInput();
-	// report frame time
-	static float frameTimeAvg = 10.0f; // estimate
-	frameTimeAvg = 0.95f * frameTimeAvg + 0.05f * t.elapsed() * 1000;
-	printf( "frame time: %5.2fms\n", frameTimeAvg );
 }
