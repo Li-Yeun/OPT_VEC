@@ -562,7 +562,7 @@ void MyApp::Init()
 	particleExplosionPosBuffer =  new Buffer(maxParticleExplosion * particleMaxTotalPos * 2, CL_MEM_READ_ONLY, particleExplosionPos);
 	particleExplosionMaxPosBuffer = new Buffer(maxParticleExplosion, CL_MEM_READ_ONLY, particleExplosionMaxPos);
 	particleExplosionColorBuffer = new Buffer(maxParticleExplosion * particleMaxTotalPos , CL_MEM_READ_ONLY, particleExplosionColor);
-	particleExplosionFadeBuffer = new Buffer(maxParticleExplosion * particleMaxTotalPos, CL_MEM_READ_ONLY, particleExplosionFade);
+	particleExplosionFadeBuffer = new Buffer(maxParticleExplosion, CL_MEM_READ_ONLY, particleExplosionFade);
 
 	particleExplosionDrawKernel->SetArgument(0, deviceBuffer);
 	particleExplosionDrawKernel->SetArgument(1, particleExplosionPosBuffer);
