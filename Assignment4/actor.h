@@ -60,7 +60,7 @@ public:
 	vector<float2> dir;
 	vector<uint> color;
 	uint* backup = 0;
-	uint fade = 255;
+	uint fade = fade;
 };
 
 class SpriteExplosion : public Actor
