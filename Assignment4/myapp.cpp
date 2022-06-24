@@ -14,7 +14,7 @@ void MyApp::Init()
 {
 	//std::cout << sizeof(int2) << std::endl;
 	//std::cout << sizeof(uint) << std::endl;
-	//
+	// 
 	// load tank sprites
 	tank1 = new Sprite("assets/tanks.png", make_int2(128, 100), make_int2(310, 360), 36, 256);
 	tank2 = new Sprite("assets/tanks.png", make_int2(327, 99), make_int2(515, 349), 36, 256);
@@ -96,7 +96,7 @@ void MyApp::Init()
 		actorPool.push_back(army2Tank);
 	}
 
-
+	
 	// load mountain peaks
 	Surface mountains( "assets/peaks.png" );
 	for (int y = 0; y < mountains.height; y++) for (int x = 0; x < mountains.width; x++)
@@ -104,7 +104,7 @@ void MyApp::Init()
 		uint p = mountains.pixels[x + y * mountains.width];
 		if ((p & 0xffff) == 0) peaks.push_back( make_float3( make_int3( x * 8, y * 8, (p >> 16) & 255 ) ) );
 	}
-
+	
 
 	//add sandstorm
 	totalBushes = 7500;
@@ -267,7 +267,7 @@ void MyApp::Init()
 
 	pointerDrawKernel = new Kernel("Kernels/pointer.cl", "Draw");
 	pointerBackupBuffer = new Buffer(sqr(pointer->sprite->frameSize));
-	pointerSpriteBuffer = new Buffer(pointer->sprite->frameSize * pointer->sprite->frameSize, CL_MEM_READ_ONLY, pointer->sprite->pixels);
+	pointerSpriteBuffer = new Buffer(pointer->sprite->frameSize * pointer->sprite->frameSize, CL_MEM_READ_ONLY, pointer->sprite->pixels); 
 
 
 	deviceBuffer = new Buffer(map.width * map.height, 0, map.bitmap->pixels);
@@ -627,8 +627,8 @@ void MyApp::MouseWheel( float y )
 	// fetch current pointer location
 	int2 pointerPos = map.ScreenToMap( mousePos );
 	// adjust zoom
-	zoom -= 10 * y;
-	if (zoom < 20) zoom = 20;
+	zoom -= 10 * y; 
+	if (zoom < 20) zoom = 20; 
 	if (zoom > 100) zoom = 100;
 	// adjust focus so that pointer remains stationary, if possible
 	map.UpdateView( screen, zoom );
@@ -771,13 +771,13 @@ void MyApp::Tick(float deltaTime)
 
 	int2 cursorPos = map.ScreenToMap(mousePos);
 	pointer->lastPos = cursorPos;
-	if (!pointerLastTarget)
-	{
-		pointerLastTarget = 1;
+	if (!pointerLastTarget) 
+	{ 
+		pointerLastTarget = 1; 
 		pointerRemoveKernel->SetArgument(3, pointerLastTarget);
 	}
 	pointerRemoveKernel->SetArgument(2, pointer->lastPos);
-
+	
 	// bush draw
 	for (int i = 0; i < 3; i++)
 		bushBackupKernel[i]->Run2D(int2(bush[i]->frameSize * bush[i]->frameSize, bushCount[i]), int2(bush[i]->frameSize, 1));
@@ -786,11 +786,11 @@ void MyApp::Tick(float deltaTime)
 	bushDrawKernel->Run2D(int2((max_bush_frameSize - 1) * (max_bush_frameSize - 1), totalBushes), int2(max_bush_frameSize - 1, 1));
 	pointerDrawKernel->SetArgument(2, cursorPos);
 	pointerDrawKernel->Run(pointer->sprite->frameSize * pointer->sprite->frameSize);
-
+	
 	// Write to screen
 	screenKernel->SetArgument(2, map.view);
 	screenKernel->SetArgument(3, map.dxy);
-
+	
 	screenKernel->Run(SCRWIDTH * SCRHEIGHT);
 
 	// handle mouse
