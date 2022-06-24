@@ -241,7 +241,7 @@ ParticleExplosion::ParticleExplosion( Tank* tank )
 	}
 
 	MyApp::particleExplosionMaxPos[id] = pos.size();
-	MyApp::particleExplosionFade[id] = fade;
+	MyApp::particleExplosionFade[id] = 255;
 	//MyApp::spriteExplosionPos[id] = make_int2(pos.x, pos.y);
 	//MyApp::spriteExplosionLastPos[id] = make_int2(pos.x, pos.y);
 	//MyApp::spriteExplosionFrame[id] = frame;
