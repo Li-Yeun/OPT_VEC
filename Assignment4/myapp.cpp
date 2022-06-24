@@ -170,19 +170,12 @@ void MyApp::Init()
 	VerletFlag* flag2 = new VerletFlag(make_int2(1076, 1870), flagPattern, flagCounter++);
 	actorPool.push_back(flag2);
 
-	bulletPos = new float2[maxBullets];
-	bulletLastPos = new int2[maxBullets];
-	bulletFrame = new int[maxBullets];
-	bulletFrameCounter = new int[maxBullets];
-	bulletLastTarget = new bool[maxBullets];
-	for (int i = 0; i < maxBullets; ++i) {
-		bulletPos[i] = float2{ -1,-1 };
-		bulletLastPos[i] = int2{ -1,-1 };
-		bulletFrame[i] = -1;
-		bulletFrameCounter[i] = -1;
-		bulletLastTarget[i] = false;
-	}
 
+	bulletPos = new float2[maxBullets]{ float2{-1,-1} };
+	bulletLastPos = new int2[maxBullets]{ int2{-1,-1} };
+	bulletFrame = new int[maxBullets] {-1};
+	bulletFrameCounter = new int[maxBullets] { -1 };
+	bulletLastTarget = new bool[maxBullets] {false};
 
 	flashSprite = new Sprite("assets/flash.png");
 	bulletSprite = new Sprite("assets/bullet.png", make_int2(2, 2), make_int2(31, 31), 32, 256);
@@ -201,17 +194,11 @@ void MyApp::Init()
 	uint* spriteExplosion_sprites = new uint[spriteExplosion_sprite_size];
 	std::copy(spriteExplosionSprite->pixels, spriteExplosionSprite->pixels + spriteExplosion_sprite_size, spriteExplosion_sprites);
 
-	spriteExplosionPos = new int2[maxSpriteExplosion];
-	spriteExplosionLastPos = new int2[maxSpriteExplosion];
-	spriteExplosionFrame = new int[maxSpriteExplosion];
-	spriteExplosionLastTarget = new bool[maxSpriteExplosion];
+	spriteExplosionPos = new int2[maxSpriteExplosion]{ int2{-1,-1} };
+	spriteExplosionLastPos = new int2[maxSpriteExplosion]{ int2{-1,-1} };
+	spriteExplosionFrame = new int[maxSpriteExplosion] {-1};
+	spriteExplosionLastTarget = new bool[maxSpriteExplosion] {false};
 
-	for (int i = 0; i < maxSpriteExplosion; ++i) {
-		spriteExplosionPos[i] = int2{ -1,-1 };
-		spriteExplosionLastPos[i] = int2{ -1,-1 };
-		spriteExplosionFrame[i] = -1;
-		spriteExplosionLastTarget[i] = false;
-	}
 
 	// Particle Explosion
 	particleMaxTotalPos = 0;
@@ -244,20 +231,10 @@ void MyApp::Init()
 			particleMaxTotalPos = temp2;
 		}
 	}
-	particleExplosionMaxPos = new uint[maxParticleExplosion];
-	particleExplosionFade = new uint[maxParticleExplosion];
-	particleExplosionPos = new int2[maxParticleExplosion * particleMaxTotalPos];
-	particleExplosionColor = new uint[maxParticleExplosion * particleMaxTotalPos];
-
-	for (int i = 0; i < maxParticleExplosion; ++i) {
-		particleExplosionMaxPos[i] = 0;
-		particleExplosionFade[i] = 0;
-	}
-
-	for (int i = 0; i < maxParticleExplosion * particleMaxTotalPos; ++i) {
-		particleExplosionPos[i] = int2{ -1,-1 };
-		particleExplosionColor[i] = 0;
-	}
+	particleExplosionMaxPos = new uint[maxParticleExplosion] {0};
+	particleExplosionFade = new uint[maxParticleExplosion]{ 0 };
+	particleExplosionPos = new int2[maxParticleExplosion * particleMaxTotalPos]{ int2{-1,-1} };
+	particleExplosionColor = new uint[maxParticleExplosion * particleMaxTotalPos] { 0 };
 
 	// initialize map view
 	map.UpdateView(screen, zoom);
